@@ -15,6 +15,8 @@ import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.fylnx.lelegram.LeleConfig;
+
 public class VideoEncodingService extends Service implements NotificationCenter.NotificationCenterDelegate {
 
     private NotificationCompat.Builder builder;
@@ -134,6 +136,8 @@ public class VideoEncodingService extends Service implements NotificationCenter.
             builder.setWhen(System.currentTimeMillis());
             builder.setChannelId(NotificationsController.OTHER_NOTIFICATIONS_CHANNEL);
             builder.setContentTitle(LocaleController.getString(R.string.AppName));
+            builder.setColor(LeleConfig.getNotificationColor());
+            builder.setCategory(NotificationCompat.CATEGORY_PROGRESS);
         }
         setCurrentMessage(videoConvertMessage);
         try {

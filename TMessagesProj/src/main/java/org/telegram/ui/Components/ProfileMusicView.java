@@ -190,7 +190,6 @@ public class ProfileMusicView extends View {
     public void setText(CharSequence author, CharSequence title) {
         this.author = new Text(author, 11, AndroidUtilities.bold());
         this.title = new Text(title, 11);
-
         setContentDescription(getString(R.string.AccDescrProfileMusic) + " " + author + " — " + title);
     }
 

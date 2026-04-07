@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
@@ -673,6 +674,13 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                         cell.setTextAndValueAndIcon(item.text, item.textValue, item.iconResId, divider);
                     }
                 }
+                if (!TextUtils.isEmpty(item.subtext)) {
+                    cell.setSubtitle(item.subtext);
+                    cell.heightDp = 60;
+                } else {
+                    cell.setSubtitle(null);
+                    cell.heightDp = 50;
+                }
                 if (item.accent) {
                     cell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
                 } else if (item.red) {
@@ -688,7 +696,11 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     checkCell.setChecked(item.checked);
                 }
                 checkCell.setEnabled(item.enabled, null);
-                checkCell.setTextAndCheck(item.text, item.checked, divider);
+                if (TextUtils.isEmpty(item.subtext)) {
+                    checkCell.setTextAndCheck(item.text, item.checked, divider);
+                } else {
+                    checkCell.setTextAndValueAndCheck(item.text, item.subtext, item.checked, true, divider);
+                }
                 checkCell.itemId = item.id;
                 if (viewType == VIEW_TYPE_CHECKRIPPLE) {
                     holder.itemView.setBackgroundColor(Theme.getColor(item.checked ? Theme.key_windowBackgroundChecked : Theme.key_windowBackgroundUnchecked));

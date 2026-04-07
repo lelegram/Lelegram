@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
 
+import com.fylnx.lelegram.helpers.InlineBotHelper;
+import com.fylnx.lelegram.helpers.MessageHelper;
+import com.fylnx.lelegram.helpers.UserHelper;
+
 public class AccountInstance {
 
     private int currentAccount;
@@ -96,6 +100,18 @@ public class AccountInstance {
 
     public SharedPreferences getNotificationsSettings() {
         return MessagesController.getNotificationsSettings(currentAccount);
+    }
+
+    public MessageHelper getMessageHelper() {
+        return MessageHelper.getInstance(currentAccount);
+    }
+
+    public UserHelper getUserHelper() {
+        return UserHelper.getInstance(currentAccount);
+    }
+
+    public InlineBotHelper getInlineBotHelper() {
+        return InlineBotHelper.getInstance(currentAccount);
     }
 
     public MemberRequestsController getMemberRequestsController() {

@@ -14,6 +14,7 @@ import android.graphics.PorterDuffColorFilter;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -106,6 +107,13 @@ public class BrightnessControlCell extends FrameLayout {
 
     public void setProgress(float value) {
         seekBarView.setProgress(value);
+        seekBarView.getSeekBarAccessibilityDelegate().postAccessibilityEventRunnable(this);
+    }
+
+    @Override
+    public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+        super.onInitializeAccessibilityEvent(event);
+        seekBarView.getSeekBarAccessibilityDelegate().onInitializeAccessibilityEvent(this, event);
     }
 
     @Override

@@ -85,6 +85,8 @@ import org.telegram.ui.Components.spoilers.SpoilersTextView;
 
 import java.util.ArrayList;
 
+import com.fylnx.lelegram.EditTextAutoFill;
+
 public class TwoStepVerificationSetupActivity extends BaseFragment {
 
     private RLottieImageView imageView;
@@ -707,7 +709,7 @@ public class TwoStepVerificationSetupActivity extends BaseFragment {
                 outlineTextFirstRow = new OutlineTextContainerView(context);
                 outlineTextFirstRow.animateSelection(1f, false);
 
-                editTextFirstRow = new EditTextBoldCursor(context);
+                editTextFirstRow = new EditTextAutoFill(context);
                 editTextFirstRow.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
                 int padding = AndroidUtilities.dp(16);
                 editTextFirstRow.setPadding(padding, padding, padding, padding);

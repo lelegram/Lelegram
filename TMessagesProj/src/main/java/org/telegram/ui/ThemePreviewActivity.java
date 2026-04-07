@@ -2056,6 +2056,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                         intensitySeekBar.setDelegate(new SeekBarView.SeekBarViewDelegate() {
                             @Override
                             public void onSeekBarDrag(boolean stop, float progress) {
+                                intensitySeekBar.getSeekBarAccessibilityDelegate().postAccessibilityEventRunnable(intensitySeekBar);
                                 currentIntensity = progress;
                                 updateIntensity();
                             }
@@ -5185,10 +5186,11 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     message.media = new TLRPC.TL_messageMediaDocument();
                     message.media.flags |= 3;
                     message.media.document = new TLRPC.TL_document();
+                    message.media.document.size = 9112611;
                     message.media.document.mime_type = "audio/mp4";
                     message.media.document.file_reference = new byte[0];
                     TLRPC.TL_documentAttributeAudio audio = new TLRPC.TL_documentAttributeAudio();
-                    audio.duration = 243;
+                    audio.duration = 266;
                     audio.performer = LocaleController.getString(R.string.ThemePreviewSongPerformer);
                     audio.title = LocaleController.getString(R.string.ThemePreviewSongTitle);
                     message.media.document.attributes.add(audio);
@@ -5263,8 +5265,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     message.media.photo.date = date;
                     TLRPC.TL_photoSize photoSize = new TLRPC.TL_photoSize();
                     photoSize.size = 0;
-                    photoSize.w = 500;
-                    photoSize.h = 302;
+                    photoSize.w = 2000;
+                    photoSize.h = 1262;
                     photoSize.type = "s";
                     photoSize.location = new TLRPC.TL_fileLocationUnavailable();
                     message.media.photo.sizes.add(photoSize);

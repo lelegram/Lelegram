@@ -26,6 +26,8 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import com.fylnx.lelegram.LeleConfig;
+
 public class FileUploadOperation {
 
     private static class UploadCachedResult {
@@ -326,6 +328,9 @@ public class FileUploadOperation {
                     }
                 }
 
+                if (uploadChunkSize > 512) {
+                    uploadChunkSize = 512;
+                }
                 uploadChunkSize *= 1024;
                 calcTotalPartsCount();
                 readBuffer = new byte[uploadChunkSize];

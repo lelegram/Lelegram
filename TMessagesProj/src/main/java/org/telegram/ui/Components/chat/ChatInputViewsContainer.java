@@ -61,6 +61,7 @@ public class ChatInputViewsContainer extends FrameLayout {
                 super.dispatchDraw(canvas);
             }
         };
+        fadeView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
     }
 
     public View getFadeView() {

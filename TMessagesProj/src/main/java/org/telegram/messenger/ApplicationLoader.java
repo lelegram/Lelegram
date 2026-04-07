@@ -47,6 +47,13 @@ import org.telegram.ui.LauncherIconController;
 
 import java.io.File;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+
+import com.fylnx.lelegram.automation.AutomationManager;
+import com.fylnx.lelegram.FirebaseFix;
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.AnalyticsHelper;
+import com.fylnx.lelegram.helpers.ComponentsHelper;
 
 public class ApplicationLoader extends Application {
 
@@ -56,6 +63,7 @@ public class ApplicationLoader extends Application {
     public static volatile Context applicationContext;
     public static volatile NetworkInfo currentNetworkInfo;
     public static volatile Handler applicationHandler;
+    public static final CountDownLatch countDownLatch = new CountDownLatch(1);
 
     private static ConnectivityManager connectivityManager;
     private static volatile boolean applicationInited = false;
@@ -80,6 +88,7 @@ public class ApplicationLoader extends Application {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
+        FirebaseFix.check(base);
     }
 
     public static ILocationServiceProvider getLocationServiceProvider() {
@@ -213,6 +222,7 @@ public class ApplicationLoader extends Application {
 
                     boolean isSlow = isConnectionSlow();
                     for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+                        if (!UserConfig.getInstance(a).isClientActivated()) continue;
                         ConnectionsManager.getInstance(a).checkConnection();
                         FileLoader.getInstance(a).onNetworkChanged(isSlow);
                     }
@@ -247,6 +257,7 @@ public class ApplicationLoader extends Application {
         SharedPrefsHelper.init(applicationContext);
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
             UserConfig.getInstance(a).loadConfig();
+            if (!UserConfig.getInstance(a).isClientActivated()) continue;
             MessagesController.getInstance(a);
             if (a == 0) {
                 SharedConfig.pushStringStatus = "__FIREBASE_GENERATING_SINCE_" + ConnectionsManager.getInstance(a).getCurrentTime() + "__";
@@ -268,9 +279,11 @@ public class ApplicationLoader extends Application {
 
         MediaController.getInstance();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
+            if (!UserConfig.getInstance(a).isClientActivated()) continue;
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
+        AutomationManager.getInstance().start();
         BillingController.getInstance().startConnection();
     }
 
@@ -288,6 +301,9 @@ public class ApplicationLoader extends Application {
         }
 
         super.onCreate();
+
+        AnalyticsHelper.start(this);
+        ComponentsHelper.fixComponents(this);
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app start time = " + (startTime = SystemClock.elapsedRealtime()));
@@ -341,6 +357,7 @@ public class ApplicationLoader extends Application {
         applicationHandler = new Handler(applicationContext.getMainLooper());
 
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
+        countDownLatch.countDown();
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();

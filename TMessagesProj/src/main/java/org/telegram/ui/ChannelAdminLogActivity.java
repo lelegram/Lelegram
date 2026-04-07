@@ -154,6 +154,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.fylnx.lelegram.MessageDetailsActivity;
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.WebAppHelper;
+
 public class ChannelAdminLogActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     protected TLRPC.Chat currentChat;
@@ -343,6 +347,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didSetNewWallpapper);
         notificationsLocker.unlock();
+        Bulletin.removeDelegate(this);
     }
 
     private void updateEmptyPlaceholder() {
@@ -1576,6 +1581,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
     private final static int OPTION_RESTRICT = 33;
     private final static int OPTION_REPORT_FALSE_POSITIVE = 34;
     private final static int OPTION_BAN = 35;
+    private final static int OPTION_DETAILS = 89;
 
     private boolean createMenu(View v) {
         return createMenu(v, 0, 0);
@@ -1790,6 +1796,12 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
             }
         }
 
+        if (LeleConfig.showMessageDetails && selectedObject.currentEvent != null) {
+            items.add(LocaleController.getString(R.string.MessageDetails));
+            options.add(OPTION_DETAILS);
+            icons.add(R.drawable.msg_info);
+        }
+
         boolean callbackSent = false;
 
         Runnable proceed = () -> {
@@ -1822,6 +1834,16 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                             return;
                         }
                         processSelectedOption(option);
+                    });
+                    cell.setOnLongClickListener(view -> {
+                        if (selectedObject == null || i >= options.size()) {
+                            return false;
+                        }
+                        if (processSelectedOptionLongClick(options.get(i))) {
+                            closeMenu();
+                            return true;
+                        }
+                        return false;
                     });
                 }
             }
@@ -2195,22 +2217,11 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     path = getFileLoader().getPathToMessage(selectedObject.messageOwner).toString();
                 }
                 Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType(selectedObject.getDocument().mime_type);
-                if (Build.VERSION.SDK_INT >= 24) {
-                    try {
-                        intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", new File(path)));
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (Exception ignore) {
-                        intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(path)));
-                    }
-                } else {
-                    intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(new File(path)));
-                }
-                try {
-                    getParentActivity().startActivityForResult(Intent.createChooser(intent, getString("ShareFile", R.string.ShareFile)), 500);
-                } catch (Exception e) {
-
-                }
+                var uri = FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", new File(path));
+                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.putExtra(Intent.EXTRA_STREAM, uri);
+                intent.setDataAndType(uri, selectedObject.getDocument().mime_type);
+                getParentActivity().startActivityForResult(Intent.createChooser(intent, getString("ShareFile", R.string.ShareFile)), 500);
                 break;
             }
             case OPTION_SAVE_TO_GALLERY2: {
@@ -2345,9 +2356,23 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                 }
                 break;
             }
+            case OPTION_DETAILS: {
+                presentFragment(new MessageDetailsActivity(selectedObject));
+                break;
+            }
         }
         selectedObject = null;
         selectedParticipant = null;
+    }
+
+    private boolean processSelectedOptionLongClick(int option) {
+        switch (option) {
+            case OPTION_DETAILS: {
+                WebAppHelper.openTLViewer(this, selectedObject.currentEvent);
+                return true;
+            }
+        }
+        return false;
     }
 
     private int getMessageType(MessageObject messageObject) {
@@ -3147,12 +3172,12 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                                     f = getFileLoader().getPathToMessage(message.messageOwner);
                                 }
                                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                                if (Build.VERSION.SDK_INT >= 24) {
+                                //if (Build.VERSION.SDK_INT >= 24) {
                                     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                                     intent.setDataAndType(FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", f), "video/mp4");
-                                } else {
-                                    intent.setDataAndType(Uri.fromFile(f), "video/mp4");
-                                }
+                                //} else {
+                                //    intent.setDataAndType(Uri.fromFile(f), "video/mp4");
+                                //}
                                 getParentActivity().startActivityForResult(intent, 500);
                             } catch (Exception e) {
                                 alertUserOpenError(message);

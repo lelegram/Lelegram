@@ -89,7 +89,7 @@ public class ReactionsDoubleTapManageActivity extends BaseFragment implements No
         listView.setAdapter(listAdapter = new RecyclerListView.SelectionAdapter() {
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                return holder.getItemViewType() == 3 || holder.getItemViewType() == 2;
+                return holder.getItemViewType() == 1 || holder.getItemViewType() == 3 || holder.getItemViewType() == 2;
             }
 
             @NonNull

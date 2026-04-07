@@ -1,0 +1,317 @@
+package com.fylnx.lelegram.settings;
+
+import android.content.Context;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.accessibility.AccessibilityManager;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+import androidx.appcompat.content.res.AppCompatResources;
+
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.R;
+import org.telegram.messenger.Utilities;
+import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.SettingsSearchCell;
+import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.FragmentFloatingButton;
+import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.UItem;
+import org.telegram.ui.Components.UniversalAdapter;
+import org.telegram.ui.ProfileActivity.SearchAdapter.SearchResult;
+
+import java.util.ArrayList;
+import me.vkryl.android.animator.BoolAnimator;
+import me.vkryl.android.animator.FactorAnimator;
+import com.fylnx.lelegram.accessibility.AccessibilitySettingsActivity;
+import com.fylnx.lelegram.helpers.CloudSettingsHelper;
+import com.fylnx.lelegram.helpers.PasscodeHelper;
+
+public class LeleSettingsActivity extends BaseLeleSettingsActivity implements FactorAnimator.Target {
+
+    private static final int ANIMATOR_ID_SEARCH_PAGE_VISIBLE = 0;
+
+    private final BoolAnimator animatorSearchPageVisible = new BoolAnimator(ANIMATOR_ID_SEARCH_PAGE_VISIBLE,
+            this, CubicBezierInterpolator.EASE_OUT_QUINT, 350);
+
+    private final int generalRow = rowId++;
+    private final int appearanceRow = rowId++;
+    private final int chatRow = rowId++;
+    private final int automationRow = rowId++;
+    private final int passcodeRow = rowId++;
+    private final int experimentRow = rowId++;
+    private final int accessibilityRow = rowId++;
+
+    private ActionBarMenuItem syncItem;
+    private final ArrayList<SearchResult> searchArray = createSearchArray();
+    private final ArrayList<CharSequence> resultNames = new ArrayList<>();
+    private final ArrayList<SearchResult> searchResults = new ArrayList<>();
+    private boolean searchWas;
+    private Runnable searchRunnable;
+    private String lastSearchString;
+
+    private FrameLayout topView;
+
+    @Override
+    public View createView(Context context) {
+        topView = new FrameLayout(context);
+
+        var logoContainer = new FrameLayout(context);
+        var logoView = new BackupImageView(context);
+
+        logoView.setImageDrawable(AppCompatResources.getDrawable(context, R.mipmap.ic_launcher));
+        logoContainer.addView(logoView, LayoutHelper.createFrame(90, 90, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 15, 0, 0));
+        topView.addView(logoContainer, LayoutHelper.createFrame(120, 120, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 23 - 12, 0, 0));
+
+        var titleView = new TextView(context);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 22);
+        titleView.setTypeface(AndroidUtilities.bold());
+        titleView.setGravity(Gravity.CENTER);
+        titleView.setSingleLine();
+        titleView.setEllipsize(TextUtils.TruncateAt.END);
+        titleView.setText(LocaleController.getString(R.string.AppNameLele));
+        titleView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
+        topView.addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 138.333f - 12, 0, 0));
+
+        var subtitleView = new TextView(context);
+        subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
+        subtitleView.setGravity(Gravity.CENTER);
+        subtitleView.setSingleLine();
+        subtitleView.setEllipsize(TextUtils.TruncateAt.END);
+        subtitleView.setText(AndroidUtilities.getVersionNameWithBuildTime());
+        subtitleView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
+        topView.addView(subtitleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 168 - 12, 0, 0));
+
+        var fragmentView = super.createView(context);
+
+        var menu = actionBar.createMenu();
+        createSearchItem(menu, new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+
+            @Override
+            public void onSearchCollapse() {
+                animatorSearchPageVisible.setValue(false, true);
+                updateActionBarVisible();
+                listView.adapter.update(true);
+            }
+
+            @Override
+            public void onSearchExpand() {
+                animatorSearchPageVisible.setValue(true, true);
+                updateActionBarVisible();
+                search("");
+                listView.adapter.update(true);
+            }
+
+            @Override
+            public void onTextChanged(EditText editText) {
+                search(editText.getText().toString());
+            }
+        });
+        syncItem = menu.addItem(1, R.drawable.cloud_sync);
+        syncItem.setContentDescription(LocaleController.getString(R.string.CloudConfig));
+        syncItem.setOnClickListener(v -> CloudSettingsHelper.getInstance().showDialog(this));
+
+        return fragmentView;
+    }
+
+    @Override
+    protected boolean needActionBarPadding() {
+        return false;
+    }
+
+    @Override
+    protected void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
+        if (isSearchFieldVisible()) {
+            items.add(UItem.asSpace(ActionBar.getCurrentActionBarHeight()));
+            fillSearchItems(items);
+            return;
+        }
+
+        items.add(UItem.asCustomShadow(topView, 200 - 12));
+
+        items.add(UItem.asButton(generalRow, R.drawable.msg_media, LocaleController.getString(R.string.General)).slug("general"));
+        items.add(UItem.asButton(appearanceRow, R.drawable.msg_theme, LocaleController.getString(R.string.ChangeChannelNameColor2)).slug("appearance"));
+        items.add(UItem.asButton(chatRow, R.drawable.msg_discussion, LocaleController.getString(R.string.Chat)).slug("chat"));
+        items.add(UItem.asButton(automationRow, R.drawable.msg_edit, LocaleController.getString(R.string.AutomationRules)).slug("automation"));
+        if (!PasscodeHelper.isSettingsHidden()) {
+            items.add(UItem.asButton(passcodeRow, R.drawable.msg_secret, LocaleController.getString(R.string.PasscodeLele)).slug("passcode"));
+        }
+        items.add(UItem.asButton(experimentRow, R.drawable.msg_fave, LocaleController.getString(R.string.NotificationsOther)).slug("experiment"));
+        AccessibilityManager am = (AccessibilityManager) ApplicationLoader.applicationContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
+        if (am != null && am.isTouchExplorationEnabled()) {
+            items.add(UItem.asButton(accessibilityRow, LocaleController.getString(R.string.AccessibilitySettings)).slug("accessibility"));
+        }
+        items.add(UItem.asShadow(null));
+    }
+
+    @Override
+    protected void onItemClick(UItem item, View view, int position, float x, float y) {
+        if (item.instanceOf(SettingsSearchCell.Factory.class)) {
+            if (item.object instanceof SearchResult r) {
+                r.open(null);
+            }
+            return;
+        }
+        var id = item.id;
+        if (id == chatRow) {
+            presentFragment(new LeleChatSettingsActivity());
+        } else if (id == generalRow) {
+            presentFragment(new LeleGeneralSettingsActivity());
+        } else if (id == appearanceRow) {
+            presentFragment(new LeleAppearanceSettingsActivity());
+        } else if (id == automationRow) {
+            presentFragment(new LeleAutomationSettingsActivity());
+        } else if (id == passcodeRow) {
+            presentFragment(new LelePasscodeSettingsActivity());
+        } else if (id == experimentRow) {
+            presentFragment(new LeleExperimentalSettingsActivity());
+        } else if (id == accessibilityRow) {
+            presentFragment(new AccessibilitySettingsActivity());
+        }
+    }
+
+    @Override
+    protected String getActionBarTitle() {
+        return LocaleController.getString(R.string.LeleSettings);
+    }
+
+    @Override
+    protected String getKey() {
+        return "";
+    }
+
+    @Override
+    public void onFactorChanged(int id, float factor, float fraction, FactorAnimator callee) {
+        if (id == ANIMATOR_ID_SEARCH_PAGE_VISIBLE) {
+            FragmentFloatingButton.setAnimatedVisibility(syncItem, 1f - factor);
+        }
+    }
+
+    @Override
+    public boolean isSwipeBackEnabled(MotionEvent event) {
+        return !animatorSearchPageVisible.getValue();
+    }
+
+    private static BaseLeleSettingsActivity createFragment(int icon) {
+        if (icon == R.drawable.msg_media) {
+            return new LeleGeneralSettingsActivity();
+        } else if (icon == R.drawable.msg_theme) {
+            return new LeleAppearanceSettingsActivity();
+        } else if (icon == R.drawable.msg_discussion) {
+            return new LeleChatSettingsActivity();
+        } else if (icon == R.drawable.msg_edit) {
+            return new LeleAutomationSettingsActivity();
+        } else if (icon == R.drawable.msg_fave) {
+            return new LeleExperimentalSettingsActivity();
+        }
+        return new LeleSettingsActivity();
+    }
+
+    private ArrayList<SearchResult> createSearchArray() {
+        var searchResultList = new ArrayList<SearchResult>();
+        var icons = new int[]{
+                R.drawable.msg_media,
+                R.drawable.msg_theme,
+                R.drawable.msg_discussion,
+                R.drawable.msg_edit,
+                R.drawable.msg_fave,
+        };
+        for (var i = 0; i < icons.length; i++) {
+            var icon = icons[i];
+            var fragment = createFragment(icon);
+            var items = new ArrayList<UItem>();
+            fragment.fillItems(items, null);
+            var fragmentTitle = fragment.getActionBarTitle();
+            String headerText = null;
+            for (var item : items) {
+                if (item.viewType == UniversalAdapter.VIEW_TYPE_HEADER) {
+                    headerText = item.text.toString();
+                    continue;
+                } else if (item.viewType == UniversalAdapter.VIEW_TYPE_SHADOW) {
+                    headerText = null;
+                    continue;
+                }
+                if (TextUtils.isEmpty(item.slug)) continue;
+                searchResultList.add(new SearchResult(i * 1000 + item.id, item.text.toString(), null, fragmentTitle, fragmentTitle.equals(headerText) ? null : headerText, icon, () -> {
+                    var fragment1 = createFragment(icon);
+                    presentFragment(fragment1);
+                    AndroidUtilities.runOnUIThread(() -> fragment1.scrollToRow(item.slug, () -> {
+                    }));
+                }));
+            }
+            searchResultList.add(new SearchResult(10000 + i, fragmentTitle, icon, () -> presentFragment(fragment)));
+        }
+        searchResultList.add(new SearchResult(8000, LocaleController.getString(R.string.EmojiUseDefault), null, LocaleController.getString(R.string.Chat), LocaleController.getString(R.string.EmojiSets), R.drawable.msg_theme, () -> {
+            var fragment = new LeleEmojiSettingsActivity();
+            presentFragment(fragment);
+            AndroidUtilities.runOnUIThread(() -> fragment.scrollToRow("useSystemEmoji", () -> {
+            }));
+        }));
+
+        return searchResultList;
+    }
+
+    private void fillSearchItems(ArrayList<UItem> items) {
+        if (searchWas) {
+            for (int i = 0; i < searchResults.size(); i++) {
+                items.add(SettingsSearchCell.Factory.of(resultNames.get(i), searchResults.get(i)));
+            }
+            if (!searchResults.isEmpty()) items.add(UItem.asShadow(null));
+        }
+    }
+
+    private void search(String text) {
+        lastSearchString = text;
+        if (searchRunnable != null) {
+            Utilities.searchQueue.cancelRunnable(searchRunnable);
+            searchRunnable = null;
+        }
+        if (TextUtils.isEmpty(text)) {
+            searchWas = false;
+            searchResults.clear();
+            resultNames.clear();
+            listView.adapter.update(true);
+            return;
+        }
+        Utilities.searchQueue.postRunnable(searchRunnable = () -> {
+            var results = new ArrayList<SearchResult>();
+            var names = new ArrayList<CharSequence>();
+            var lowerQuery = text.toLowerCase();
+            for (var result : searchArray) {
+                var title = result.searchTitle.toLowerCase();
+                var index = title.indexOf(lowerQuery);
+                var matchLen = lowerQuery.length();
+                if (index < 0) continue;
+                var ssb = new SpannableStringBuilder(result.searchTitle);
+                ssb.setSpan(new ForegroundColorSpan(getThemedColor(Theme.key_windowBackgroundWhiteBlueText4)), index, Math.min(index + matchLen, ssb.length()), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                results.add(result);
+                names.add(ssb);
+            }
+
+            AndroidUtilities.runOnUIThread(() -> {
+                if (!text.equals(lastSearchString)) {
+                    return;
+                }
+                searchWas = true;
+                searchResults.clear();
+                resultNames.clear();
+                searchResults.addAll(results);
+                resultNames.addAll(names);
+                listView.adapter.update(true);
+            });
+        }, 300);
+    }
+}

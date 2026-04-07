@@ -11,6 +11,7 @@ import android.text.TextPaint;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import androidx.core.graphics.ColorUtils;
@@ -21,7 +22,7 @@ import org.telegram.ui.ActionBar.Theme;
 
 public class SlideChooseView extends View {
 
-    private final SeekBarAccessibilityDelegate accessibilityDelegate;
+    public final SeekBarAccessibilityDelegate accessibilityDelegate;
 
     private Paint paint;
     private Paint linePaint;
@@ -72,6 +73,7 @@ public class SlideChooseView extends View {
         linePaint.setStrokeCap(Paint.Cap.ROUND);
         textPaint.setTextSize(AndroidUtilities.dp(13));
 
+        setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
         accessibilityDelegate = new IntSeekBarAccessibilityDelegate() {
             @Override
             protected int getProgress() {
@@ -198,6 +200,7 @@ public class SlideChooseView extends View {
     }
 
     private void setOption(int index) {
+        int prevIndex = selectedIndex;
         if (selectedIndex != index) {
             AndroidUtilities.vibrateCursor(this);
         }
@@ -206,6 +209,7 @@ public class SlideChooseView extends View {
             callback.onOptionSelected(index);
         }
         invalidate();
+        if (prevIndex != selectedIndex) accessibilityDelegate.postAccessibilityEventRunnable(this);
     }
 
     @Override
@@ -290,6 +294,12 @@ public class SlideChooseView extends View {
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(12 * movingAnimated), paint);
         paint.setColor(getThemedColor(Theme.key_switchTrackChecked));
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(6), paint);
+    }
+
+    @Override
+    public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+        super.onInitializeAccessibilityEvent(event);
+        accessibilityDelegate.onInitializeAccessibilityEvent(this, event);
     }
 
     @Override

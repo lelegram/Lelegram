@@ -39,6 +39,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.location.LeleLocationSource;
+
 @SuppressLint("MissingPermission")
 public class LocationController extends BaseController implements NotificationCenter.NotificationCenterDelegate, ILocationServiceProvider.IAPIConnectionCallbacks, ILocationServiceProvider.IAPIOnConnectionFailedListener {
 
@@ -526,6 +529,9 @@ public class LocationController extends BaseController implements NotificationCe
         if (location != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && (SystemClock.elapsedRealtimeNanos() - location.getElapsedRealtimeNanos()) / 1000000000 > 60 * 5) {
             return;
         }
+        if (LeleConfig.mapDriftingFix && location != null) {
+            LeleLocationSource.transform(location);
+        }
         lastKnownLocation = location;
         if (lastKnownLocation != null) {
             AndroidUtilities.runOnUIThread(() -> NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.newLocationAvailable));
@@ -941,6 +947,7 @@ public class LocationController extends BaseController implements NotificationCe
     public static int getLocationsCount() {
         int count = 0;
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (!UserConfig.getInstance(a).isClientActivated()) continue;
             count += LocationController.getInstance(a).sharingLocationsUI.size();
         }
         return count;

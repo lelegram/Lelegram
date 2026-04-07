@@ -157,6 +157,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.fylnx.lelegram.LeleConfig;
+
 import me.vkryl.android.animator.BoolAnimator;
 
 public class EmojiView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, InAppKeyboardInsetView {
@@ -1537,10 +1539,15 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
     private final BlurredBackgroundDrawableViewFactory blurredBackgroundDrawableFactory;
 
     public EmojiView(BaseFragment fragment, boolean needAnimatedEmoji, boolean needStickers, boolean needGif, final Context context, boolean needSearch, final TLRPC.ChatFull chatFull, ViewGroup parentView, boolean shouldDrawBackground, Theme.ResourcesProvider resourcesProvider, boolean frozenAtStart, boolean glassDesign) {
+        this(fragment, needAnimatedEmoji, false, needStickers, needGif, context, needSearch, chatFull, parentView, shouldDrawBackground, resourcesProvider, frozenAtStart, glassDesign);
+    }
+
+    public EmojiView(BaseFragment fragment, boolean needAnimatedEmoji, boolean needEmojisForNonPremium, boolean needStickers, boolean needGif, final Context context, boolean needSearch, final TLRPC.ChatFull chatFull, ViewGroup parentView, boolean shouldDrawBackground, Theme.ResourcesProvider resourcesProvider, boolean frozenAtStart, boolean glassDesign) {
         super(context);
         this.shouldDrawBackground = shouldDrawBackground;
         this.fragment = fragment;
-        this.allowAnimatedEmoji = needAnimatedEmoji;
+        this.allowEmojisForNonPremium = needEmojisForNonPremium;
+        this.allowAnimatedEmoji = needAnimatedEmoji && (UserConfig.getInstance(currentAccount).isPremium() || needEmojisForNonPremium);
         this.resourcesProvider = resourcesProvider;
         this.glassDesign = glassDesign;
 
@@ -1623,7 +1630,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         emojiTab.view = emojiContainer;
         allTabs.add(emojiTab);
 
-        if (needAnimatedEmoji) {
+        if (allowAnimatedEmoji) {
             MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_EMOJIPACKS);
             MediaDataController.getInstance(currentAccount).checkFeaturedEmoji();
             animatedEmojiTextColorFilter = new PorterDuffColorFilter(getThemedColor(Theme.key_featuredStickers_addButton), PorterDuff.Mode.SRC_IN);
@@ -1803,7 +1810,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
             }
         });
 
-        emojiTabs = new EmojiTabsStrip(context, resourcesProvider, true, false, true, needAnimatedEmoji, 0, fragment != null ? () -> {
+        emojiTabs = new EmojiTabsStrip(context, resourcesProvider, true, false, true, allowAnimatedEmoji, 0, fragment != null ? () -> {
             if (delegate != null) {
                 delegate.onEmojiSettingsClick(emojiAdapter.frozenEmojiPacks);
             }
@@ -5419,7 +5426,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
         final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
 
-        SharedPreferences preferences = MessagesController.getEmojiSettings(currentAccount);
+        /*SharedPreferences preferences = MessagesController.getEmojiSettings(currentAccount);
         featuredStickerSets.clear();
         ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedStickerSets();
         for (int a = 0, N = featured.size(); a < N; a++) {
@@ -5439,7 +5446,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
             trendingStickersTabView.setContentDescription(getString(R.string.FeaturedStickers));
             trendingTabNum = stickersTabOffset;
             stickersTabOffset++;
-        }
+        }*/
 
         if (!favouriteStickers.isEmpty()) {
             favTabNum = stickersTabOffset;
@@ -6742,6 +6749,11 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                             ((ChatActivity) fragment).openAttachMenuForCreatingSticker();
                         }
                     });
+                    containerLayout.setOnLongClickListener(v -> {
+                        LeleConfig.toggleMinimizedStickerCreator();
+                        checkDocuments(false);
+                        return true;
+                    });
 
                     final ImageView icon = new ImageView(context);
                     icon.setImageResource(R.drawable.menu_sticker_add);
@@ -6836,6 +6848,17 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                             }
                         } else if (object == recentStickers) {
                             cell.setText(getString(R.string.RecentStickers), R.drawable.msg_close, getString(R.string.ClearRecentStickersAlertTitle));
+                            if (LeleConfig.minimizedStickerCreator) {
+                                cell.setCreate(v -> {
+                                    if (fragment instanceof ChatActivity) {
+                                        ((ChatActivity) fragment).openAttachMenuForCreatingSticker();
+                                    }
+                                }, v -> {
+                                    LeleConfig.toggleMinimizedStickerCreator();
+                                    checkDocuments(false);
+                                    return true;
+                                });
+                            }
                         } else if (object == favouriteStickers) {
                             cell.setText(getString(R.string.FavoriteStickers), 0);
                         } else if (object == premiumStickers) {
@@ -7638,13 +7661,15 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
             }
             ArrayList<Integer> prevRowHashCodes = new ArrayList<>(rowHashCodes);
 
-            final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
-            ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedEmojiSets();
-            featuredEmojiSets.clear();
-            for (int a = 0, N = featured.size(); a < N; a++) {
-                TLRPC.StickerSetCovered set = featured.get(a);
-                if (!mediaDataController.isStickerPackInstalled(set.set.id) || installedEmojiSets.contains(set.set.id)) {
-                    featuredEmojiSets.add(set);
+            if (!UserConfig.getInstance(currentAccount).isPremium() && allowEmojisForNonPremium) {
+                final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
+                ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedEmojiSets();
+                featuredEmojiSets.clear();
+                for (int a = 0, N = featured.size(); a < N; a++) {
+                    TLRPC.StickerSetCovered set = featured.get(a);
+                    if (!mediaDataController.isStickerPackInstalled(set.set.id) || installedEmojiSets.contains(set.set.id)) {
+                        featuredEmojiSets.add(set);
+                    }
                 }
             }
 

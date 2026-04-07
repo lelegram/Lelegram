@@ -77,6 +77,8 @@ import org.telegram.ui.Components.VerticalPositionAutoAnimator;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import com.fylnx.lelegram.EditTextAutoFill;
+
 public class TwoStepVerificationActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     private ListAdapter listAdapter;
@@ -265,7 +267,7 @@ public class TwoStepVerificationActivity extends BaseFragment implements Notific
         passwordOutlineView.animateSelection(1f, false);
         linearLayout.addView(passwordOutlineView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 24, 24, 24, 0));
 
-        passwordEditText = new EditTextBoldCursor(context);
+        passwordEditText = new EditTextAutoFill(context);
         passwordEditText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
         passwordEditText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         passwordEditText.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));

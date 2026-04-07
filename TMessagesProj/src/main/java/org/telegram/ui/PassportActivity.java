@@ -143,6 +143,8 @@ import java.util.TimerTask;
 
 import javax.crypto.Cipher;
 
+import com.fylnx.lelegram.EditTextAutoFill;
+
 public class PassportActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     public final static int TYPE_REQUEST = 0;
@@ -1576,7 +1578,7 @@ public class PassportActivity extends BaseFragment implements NotificationCenter
             linearLayout2.addView(inputFieldContainers[a], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
             inputFieldContainers[a].setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
 
-            inputFields[a] = new EditTextBoldCursor(context);
+            inputFields[a] = new EditTextAutoFill(context);
             inputFields[a].setTag(a);
             inputFields[a].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             inputFields[a].setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
@@ -6902,13 +6904,13 @@ public class PassportActivity extends BaseFragment implements NotificationCenter
                 Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 File image = AndroidUtilities.generatePicturePath();
                 if (image != null) {
-                    if (Build.VERSION.SDK_INT >= 24) {
+                    //if (Build.VERSION.SDK_INT >= 24) {
                         takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", image));
                         takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                         takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } else {
-                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(image));
-                    }
+                    //} else {
+                    //    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(image));
+                    //}
                     currentPicturePath = image.getAbsolutePath();
                 }
                 startActivityForResult(takePictureIntent, 0);

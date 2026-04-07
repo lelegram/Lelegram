@@ -34,7 +34,6 @@ public class AvailableReactionCell extends FrameLayout {
     private BackupImageView imageView;
     private Switch switchView;
     private CheckBox2 checkBox;
-    private View overlaySelectorView;
     public TLRPC.TL_availableReaction react;
     private boolean canLock;
     public boolean locked;
@@ -68,9 +67,6 @@ public class AvailableReactionCell extends FrameLayout {
             switchView.setColors(Theme.key_switchTrack, Theme.key_switchTrackChecked, Theme.key_switchTrackBlueThumb, Theme.key_switchTrackBlueThumbChecked);
             addView(switchView, LayoutHelper.createFrameRelatively(37, 20, Gravity.END | Gravity.CENTER_VERTICAL, 0, 0, 22, 0));
         }
-        overlaySelectorView = new View(context);
-        overlaySelectorView.setBackground(Theme.getSelectorDrawable(false));
-        addView(overlaySelectorView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         setWillNotDraw(false);
     }
 

@@ -39,6 +39,8 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fylnx.lelegram.Extra;
+
 public class DialogsBotsAdapter extends UniversalAdapter {
 
     private final Context context;
@@ -140,7 +142,7 @@ public class DialogsBotsAdapter extends UniversalAdapter {
                     TLRPC.TL_topPeer peer = top_peers.get(i);
                     long dialogId = DialogObject.getPeerDialogId(peer.peer);
                     TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-                    if (user == null || !user.bot) continue;
+                    if (user == null || !user.bot || Extra.isTrustedBot(user.id)) continue;
                     top_peers_bots.add(user);
                 }
             }
@@ -441,7 +443,7 @@ public class DialogsBotsAdapter extends UniversalAdapter {
 
         public boolean loading;
         private boolean cacheLoaded;
-        private boolean endReached;
+        private boolean endReached = true;
 
         private long cacheTime;
         private String lastOffset;
@@ -546,7 +548,7 @@ public class DialogsBotsAdapter extends UniversalAdapter {
         }
 
         public void load() {
-            if (loading || endReached) return;
+            if (true || loading || endReached) return;
             loading = true;
 
             if (!cacheLoaded) {

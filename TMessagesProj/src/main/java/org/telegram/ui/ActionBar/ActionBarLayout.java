@@ -93,6 +93,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.AnalyticsHelper;
+
 public class ActionBarLayout extends FrameLayout implements INavigationLayout, FloatingDebugProvider {
 
     public boolean highlightActionButtons = false;
@@ -613,7 +616,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 
         if (layerShadowDrawable == null) {
             layerShadowDrawable = getResources().getDrawable(R.drawable.layer_shadow);
-            headerShadowDrawable = getResources().getDrawable(R.drawable.header_shadow).mutate();
+            headerShadowDrawable = LeleConfig.disableAppBarShadow ? null : getResources().getDrawable(R.drawable.header_shadow).mutate();
             scrimPaint = new Paint();
         }
 
@@ -853,6 +856,11 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         }
     }
 
+    @Override
+    public void setHeaderShadow(Drawable drawable) {
+        headerShadowDrawable = drawable;
+    }
+
     @Keep
     public void setInnerTranslationX(float value) {
         innerTranslationX = value;
@@ -877,9 +885,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 }
             }
             if (currFragment != null && !currFragment.inPreviewMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !SharedConfig.noStatusBar) {
-                int overlayColor = Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE ? AndroidUtilities.LIGHT_STATUS_BAR_OVERLAY : AndroidUtilities.DARK_STATUS_BAR_OVERLAY;
-                int oldStatusBarColor = prevFragment != null && prevFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : overlayColor;
-                int newStatusBarColor = currFragment != null && currFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : overlayColor;
+                int oldStatusBarColor = prevFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : prevFragment.isLightStatusBar() ? AndroidUtilities.LIGHT_STATUS_BAR_OVERLAY : AndroidUtilities.DARK_STATUS_BAR_OVERLAY;
+                int newStatusBarColor = currFragment.hasForceLightStatusBar() ? Color.TRANSPARENT : currFragment.isLightStatusBar() ? AndroidUtilities.LIGHT_STATUS_BAR_OVERLAY : AndroidUtilities.DARK_STATUS_BAR_OVERLAY;
                 parentActivity.getWindow().setStatusBarColor(ColorUtils.blendARGB(newStatusBarColor, oldStatusBarColor, ratio));
             }
         }
@@ -914,6 +921,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         if (!fragmentsStack.isEmpty()) {
             BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
             lastFragment.onResume();
+            AnalyticsHelper.trackFragmentLifecycle("resumed", lastFragment);
         }
         if (sheetFragment != null) {
             sheetFragment.onResume();
@@ -936,6 +944,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         if (!fragmentsStack.isEmpty()) {
             BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
             lastFragment.onPause();
+            AnalyticsHelper.trackFragmentLifecycle("paused", lastFragment);
         }
         if (sheetFragment != null) {
             sheetFragment.onPause();
@@ -1244,6 +1253,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
 
             fragmentsStack.remove(fragmentsStack.size() - 1);
             onFragmentStackChanged("onSlideAnimationEnd");
+            AnalyticsHelper.trackFragmentLifecycle("destroyed", lastFragment);
 
             LayoutContainer temp = containerView;
             containerView.setAlpha(1.0f);
@@ -2213,6 +2223,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
             fragment.onTransitionAnimationEnd(true, false);
             fragment.onBecomeFullyVisible();
         }
+        AnalyticsHelper.trackFragmentLifecycle("created", fragment);
         return true;
     }
 
@@ -2289,6 +2300,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 backgroundView.setVisibility(VISIBLE);
             }
         }
+        AnalyticsHelper.trackFragmentLifecycle("created", fragment);
         return true;
     }
 
@@ -2375,6 +2387,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
             bringChildToFront(sheetContainer);
         }
         onFragmentStackChanged("closeLastFragmentInternalRemoveOld");
+        AnalyticsHelper.trackFragmentLifecycle("destroyed", fragment);
     }
 
     @Override
@@ -2437,7 +2450,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         fragment.setInMenuMode(false);
 
         try {
-            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (fragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()), fragment.hasForceLightStatusBar());
+            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), fragment.isLightStatusBar(), fragment.hasForceLightStatusBar());
         } catch (Exception ignore) {}
     }
 
@@ -2477,7 +2490,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         }
 
         if (previousFragment != null) {
-            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE || (previousFragment.hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()), previousFragment.hasForceLightStatusBar());
+            AndroidUtilities.setLightStatusBar(parentActivity.getWindow(), previousFragment.isLightStatusBar(), previousFragment.hasForceLightStatusBar());
             LayoutContainer temp = containerView;
             containerView = containerViewBack;
             containerViewBack = temp;
@@ -2729,6 +2742,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
                 onFragmentStackChanged("removeFragmentFromStackInternal " + allowFinishFragment);
             }
         }
+        AnalyticsHelper.trackFragmentLifecycle("destroyed", fragment);
     }
 
     @Override

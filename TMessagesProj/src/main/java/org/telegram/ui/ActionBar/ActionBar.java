@@ -320,6 +320,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                     int y = titleView.getTextStartY() + Theme.getCurrentHolidayDrawableYOffset() + (int) Math.ceil((titleView.getTextHeight() - rect.height()) / 2.0f) + (int) (dp(8) * (1f - titlesContainer.getScaleY()));
                     drawable.setBounds(x, y - drawable.getIntrinsicHeight(), x + drawable.getIntrinsicWidth(), y);
                     drawable.setAlpha((int) (255 * titlesContainer.getAlpha() * titleView.getAlpha()));
+                    drawable.setColorFilter(textPaint.getColor(), PorterDuff.Mode.MULTIPLY);
                     drawable.draw(canvas);
                     if (overlayTitleAnimationInProgress) {
                         child.invalidate();
@@ -694,7 +695,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         canvas.translate(front ? getWidth() * progress * 0.5f : -getWidth() * 0.4f * (1f - progress), 0);
         for (int i = 0; i < getChildCount(); i++) {
             View ch = getChildAt(i);
-            if ((!hideBackDrawable || ch != backButtonImageView) && ch.getVisibility() == View.VISIBLE && !(ch instanceof ActionBarMenu)) {
+            if ((!hideBackDrawable || ch != backButtonImageView) && ch.getVisibility() == View.VISIBLE && ch.getAlpha() != 0 && !(ch instanceof ActionBarMenu)) {
                 canvas.save();
                 canvas.translate(ch.getX(), ch.getY());
                 ch.draw(canvas);
@@ -1062,7 +1063,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
     }
 
     public int getBackgroundColor() {
-        return actionBarColor;
+        return isActionModeShowed() ? actionModeColor : actionBarColor;
     }
 
     public boolean isActionModeShowed() {
@@ -1697,6 +1698,10 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                 menu.updateItemsColor();
             }
         }
+    }
+
+    public int getItemsColor() {
+        return itemsColor;
     }
 
     public void setCastShadows(boolean value) {

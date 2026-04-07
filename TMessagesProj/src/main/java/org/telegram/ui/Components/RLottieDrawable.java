@@ -1470,4 +1470,9 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
     public void setAllowDrawFramesWhileCacheGenerating(boolean allow) {
         allowDrawFramesWhileCacheGenerating = allow;
     }
+
+    @Override
+    public int getFps() {
+        return metaData[1];
+    }
 }

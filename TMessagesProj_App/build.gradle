@@ -1,201 +1,164 @@
-apply plugin: 'com.android.application'
+import com.android.build.api.variant.FilterConfiguration
 
-repositories {
-    mavenCentral()
-    google()
-}
-
-configurations {
-    compile.exclude module: 'support-v4'
-}
-
-configurations.all {
-    exclude group: 'com.google.firebase', module: 'firebase-core'
-    exclude group: 'androidx.recyclerview', module: 'recyclerview'
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+    id 'io.sentry.android.gradle'
 }
 
 dependencies {
     implementation project(':TMessagesProj')
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
-    implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
+}
+
+def targetAbi = project.findProperty("targetAbi")?.toString()
+def nativeDebugSymbolLevel = (project.findProperty("nativeDebugSymbolLevel")?.toString() ?: "FULL").trim().toUpperCase(Locale.ROOT)
+def supportedNativeDebugSymbolLevels = ["NONE", "SYMBOL_TABLE", "FULL"] as Set
+if (!supportedNativeDebugSymbolLevels.contains(nativeDebugSymbolLevel)) {
+    throw new GradleException("Unsupported nativeDebugSymbolLevel '${nativeDebugSymbolLevel}'. Expected one of ${supportedNativeDebugSymbolLevels}.")
+}
+
+Properties localProperties = new Properties()
+if (project.rootProject.file('local.properties').exists()) {
+    localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
+}
+
+Properties sentryProperties = new Properties()
+[project.rootProject.file('sentry.properties'), project.file('sentry.properties')].each { file ->
+    if (file.exists()) {
+        file.withInputStream { stream ->
+            sentryProperties.load(stream)
+        }
+    }
+}
+
+def firstNonBlank = { String... values ->
+    values.find { value -> value != null && !value.isBlank() }
+}
+
+def sentryAuthToken = firstNonBlank(
+        System.getenv("SENTRY_AUTH_TOKEN"),
+        project.findProperty("sentryAuthToken")?.toString(),
+        localProperties.getProperty("sentryAuthToken"),
+        sentryProperties.getProperty("auth.token")
+)
+def sentryOrg = firstNonBlank(
+        System.getenv("SENTRY_ORG"),
+        project.findProperty("sentryOrg")?.toString(),
+        localProperties.getProperty("sentryOrg"),
+        sentryProperties.getProperty("defaults.org")
+)
+def sentryProject = firstNonBlank(
+        System.getenv("SENTRY_PROJECT"),
+        project.findProperty("sentryProject")?.toString(),
+        localProperties.getProperty("sentryProject"),
+        sentryProperties.getProperty("defaults.project")
+)
+def sentryUploadEnabled = sentryAuthToken != null && sentryOrg != null && sentryProject != null
+
+sentry {
+    uploadNativeSymbols = sentryUploadEnabled
+    includeSourceContext = sentryUploadEnabled
+    autoUploadProguardMapping = sentryUploadEnabled
+    additionalSourceDirsForSourceContext = [ '../TMessagesProj/src/main/java' ]
+    if (sentryUploadEnabled) {
+        org = sentryOrg
+        projectName = sentryProject
+        authToken = sentryAuthToken
+    }
+    autoInstallation {
+        enabled = false
+    }
+    ignoredBuildTypes = ["debug"]
+}
+
+if (!sentryUploadEnabled) {
+    logger.lifecycle("[Sentry] Upload tasks disabled: missing auth token, org, or project.")
 }
 
 android {
-    compileSdkVersion 35
-    buildToolsVersion '35.0.0'
-
     defaultConfig.applicationId = APP_PACKAGE
 
-    sourceSets.main.jniLibs.srcDirs = ['../TMessagesProj/jni/']
-
-    lintOptions {
-        disable 'MissingTranslation'
-        disable 'ExtraTranslation'
-        disable 'BlockedPrivateApi'
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-
-        coreLibraryDesugaringEnabled true
+    packagingOptions {
+        resources {
+            excludes += '**'
+        }
     }
 
     signingConfigs {
-        debug {
-            storeFile file("../TMessagesProj/config/release.keystore")
-            storePassword RELEASE_STORE_PASSWORD
-            keyAlias RELEASE_KEY_ALIAS
-            keyPassword RELEASE_KEY_PASSWORD
-        }
-
-        release {
-            storeFile file("../TMessagesProj/config/release.keystore")
-            storePassword RELEASE_STORE_PASSWORD
-            keyAlias RELEASE_KEY_ALIAS
-            keyPassword RELEASE_KEY_PASSWORD
+        if (localProperties.getProperty("storeFile") != null) {
+            sign {
+                storeFile file(localProperties.getProperty("storeFile"))
+                storePassword localProperties.getProperty("storePassword")
+                keyAlias localProperties.getProperty("keyAlias")
+                keyPassword localProperties.getProperty("keyPassword")
+            }
         }
     }
 
     buildTypes {
         debug {
-            debuggable true
-            jniDebuggable true
-            signingConfig signingConfigs.debug
+            if (localProperties.getProperty("storeFile") != null) {
+                signingConfig signingConfigs.sign
+            }
             applicationIdSuffix ".beta"
-            minifyEnabled false
-            shrinkResources false
-            multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro', '../TMessagesProj/proguard-rules-beta.pro'
-            ndk.debugSymbolLevel = 'FULL'
-        }
-
-        standalone {
-            debuggable false
-            jniDebuggable false
-            signingConfig signingConfigs.release
-            applicationIdSuffix ".web"
-            minifyEnabled true
-            shrinkResources false
-            multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
         }
 
         release {
-            debuggable false
-            jniDebuggable false
-            signingConfig signingConfigs.release
             minifyEnabled true
-            shrinkResources false
-            multiDexEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
-            ndk.debugSymbolLevel = 'FULL'
-        }
-    }
-
-    sourceSets.debug {
-        manifest.srcFile '../TMessagesProj/config/debug/AndroidManifest.xml'
-    }
-
-    sourceSets.standalone {
-        manifest.srcFile '../TMessagesProj/config/release/AndroidManifest.xml'
-    }
-
-    sourceSets.release {
-        manifest.srcFile '../TMessagesProj/config/release/AndroidManifest.xml'
-    }
-
-    flavorDimensions "minApi"
-
-    productFlavors {
-        bundleAfat {
-            ndk {
-                abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            shrinkResources true
+            vcsInfo.include false
+            if (localProperties.getProperty("storeFile") != null) {
+                signingConfig signingConfigs.sign
+            } else {
+                signingConfig signingConfigs.debug
             }
-            ext {
-                abiVersionCode = 1
-            }
-            buildConfigField "boolean", "BUNDLE", "true"
-        }
-        bundleAfat_SDK23 {
-            ndk {
-                abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-            }
-            sourceSets.debug {
-                manifest.srcFile '../TMessagesProj/config/debug/AndroidManifest_SDK23.xml'
-            }
-            sourceSets.release {
-                manifest.srcFile '../TMessagesProj/config/release/AndroidManifest_SDK23.xml'
-            }
-            minSdkVersion 23
-            ext {
-                abiVersionCode = 2
-            }
-            buildConfigField "boolean", "BUNDLE", "true"
-        }
-        afat {
-            ndk {
-                abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
-            }
-            sourceSets.debug {
-                manifest.srcFile '../TMessagesProj/config/debug/AndroidManifest_SDK23.xml'
-            }
-            sourceSets.release {
-                manifest.srcFile '../TMessagesProj/config/release/AndroidManifest_SDK23.xml'
-            }
-            sourceSets.standalone {
-                manifest.srcFile '../TMessagesProj/config/release/AndroidManifest_standalone.xml'
-            }
-            ext {
-                abiVersionCode = 9
-            }
-            buildConfigField "boolean", "BUNDLE", "false"
+            proguardFiles '../TMessagesProj/proguard-rules.pro'
+            ndk.debugSymbolLevel nativeDebugSymbolLevel
         }
     }
 
     defaultConfig.versionCode = Integer.parseInt(APP_VERSION_CODE)
 
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            outputFileName = "app.apk"
-            output.versionCodeOverride = defaultConfig.versionCode * 10 + variant.productFlavors.get(0).abiVersionCode
-        }
-    }
-
-    variantFilter { variant ->
-        def names = variant.flavors*.name
-        if (variant.buildType.name != "release" && !names.contains("afat")) {
-            setIgnore(true)
-        }
-    }
-
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 35
         versionName APP_VERSION_NAME
-        ndkVersion "21.4.7075529"
 
         multiDexEnabled true
+    }
 
-        vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
-
-        externalNativeBuild {
-            cmake {
-                version '3.10.2'
-                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-21' // , '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
-            }
+    bundle {
+        language {
+            enableSplit = false
         }
     }
 
-    buildFeatures {
-        buildConfig = true
+    splits.abi {
+        var buildingBundle = gradle.startParameter.taskNames.any { it.startsWith("bundle") }
+        enable !buildingBundle
+        universalApk targetAbi == null
+
+        reset()
+        if (targetAbi != null) {
+            include targetAbi
+        } else {
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
     namespace 'org.telegram.messenger.regular'
 
-    lintOptions {
-        checkReleaseBuilds false
+    dependenciesInfo {
+        includeInApk false
+        includeInBundle false
     }
 }
 
-apply plugin: 'com.google.gms.google-services'
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.each { output ->
+            def abi = output.filters.find { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier
+            def abiName = abi ?: "universal"
+            def baseVersionCode = output.versionCode.get()
+            output.outputFileName.set("Lelegram-${output.versionName.get()}-${baseVersionCode}-${abiName}.apk")
+            output.versionCode.set(baseVersionCode * 10)
+        }
+    }
+}

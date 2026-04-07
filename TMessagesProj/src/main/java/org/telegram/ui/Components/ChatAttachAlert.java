@@ -231,6 +231,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public boolean canOpenPreview = false;
     private boolean isSoundPicker = false;
+    private boolean isEmojiPicker = false;
     public boolean isStoryLocationPicker = false;
     public boolean isBizLocationPicker = false;
     public boolean isStoryAudioPicker = false;
@@ -2670,6 +2671,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 bottomFadeDrawable.draw(canvas);
             }
         };
+        bottomFadeView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         bottomFadeDrawable = new BlurredBackgroundWithFadeDrawable(
                 iBlur3FactoryFade.create(bottomFadeView, null));
         if (!SharedConfig.chatBlurEnabled() || LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS) || true) {
@@ -4740,7 +4742,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
         }
         if (documentLayout == null) {
-            int type = isSoundPicker ? ChatAttachAlertDocumentLayout.TYPE_RINGTONE : ChatAttachAlertDocumentLayout.TYPE_DEFAULT;
+            int type = isEmojiPicker ? ChatAttachAlertDocumentLayout.TYPE_EMOJI : isSoundPicker ? ChatAttachAlertDocumentLayout.TYPE_RINGTONE : ChatAttachAlertDocumentLayout.TYPE_DEFAULT;
             layouts[4] = documentLayout = new ChatAttachAlertDocumentLayout(this, getContext(), type, resourcesProvider);
             documentLayout.setDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
                 @Override
@@ -4790,9 +4792,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             documentLayout.setMaxSelectedFiles(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled || editingMessageObject != null ? 1 : -1);
         } else {
             documentLayout.setMaxSelectedFiles(maxSelectedPhotos);
-            documentLayout.setCanSelectOnlyImageFiles(!isSoundPicker && !allowEnterCaption);
+            documentLayout.setCanSelectOnlyImageFiles(!isSoundPicker && !isEmojiPicker && !allowEnterCaption);
         }
         documentLayout.isSoundPicker = isSoundPicker;
+        documentLayout.isEmojiPicker = isEmojiPicker;
         if (show) {
             showLayout(documentLayout);
         }
@@ -4814,7 +4817,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         commentTextView.hidePopup(true);
         topCommentTextView.hidePopup(true);
         if (show) {
-            if (!isSoundPicker) {
+            if (!isSoundPicker && !isEmojiPicker) {
                 frameLayout2.setVisibility(View.VISIBLE);
             }
             writeButtonContainer.setVisibility(View.VISIBLE);
@@ -4863,7 +4866,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 public void onAnimationEnd(Animator animation) {
                     if (animation.equals(commentsAnimator)) {
                         if (!show) {
-                            if (!isSoundPicker) {
+                            if (!isSoundPicker && !isEmojiPicker) {
                                 frameLayout2.setVisibility(View.INVISIBLE);
                             }
                             writeButtonContainer.setVisibility(View.INVISIBLE);
@@ -5756,6 +5759,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 pollsEnabled = UserObject.isBot(user) || UserObject.isUserSelf(user);
                 todoEnabled = !(baseFragment instanceof ChatActivity) || ((ChatActivity) baseFragment).getCurrentEncryptedChat() == null;
             }
+            todoEnabled = todoEnabled && UserConfig.getInstance(currentAccount).isPremium();
         }
         if (!(baseFragment instanceof ChatActivity && avatarPicker != 2)) {
             commentTextView.setVisibility(allowEnterCaption ? View.VISIBLE : View.INVISIBLE);
@@ -5781,7 +5785,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             openAudioLayout(false);
             layoutToSet = audioLayout;
             selectedId = 3;
-        } else if (isSoundPicker) {
+        } else if (isSoundPicker || isEmojiPicker) {
             openDocumentsLayout(false);
             layoutToSet = documentLayout;
             selectedId = 4;
@@ -6006,6 +6010,12 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         isSoundPicker = true;
         buttonsRecyclerViewWrapper.setVisibility(View.GONE);
         selectedTextView.setText(getString(R.string.ChoosePhotoOrVideo));
+    }
+
+    public void setEmojiPicker() {
+        isEmojiPicker = true;
+        buttonsRecyclerView.setVisibility(View.GONE);
+        selectedTextView.setText(LocaleController.getString("ChoosePhotoOrVideo", R.string.ChoosePhotoOrVideo));
     }
 
     public boolean storyLocationPickerFileIsVideo;

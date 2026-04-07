@@ -223,7 +223,7 @@ public class TextCheckCell extends FrameLayout {
         super.setPressed(pressed);
     }
 
-    public void setTextAndValueAndCheck(String text, String value, boolean checked, boolean multiline, boolean divider) {
+    public void setTextAndValueAndCheck(CharSequence text, CharSequence value, boolean checked, boolean multiline, boolean divider) {
         AvatarSpan.checkSpansParent(text, this);
         textView.setText(text);
         valueTextView.setText(value);
@@ -411,7 +411,7 @@ public class TextCheckCell extends FrameLayout {
     @Override
     public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
-        info.setClassName("android.widget.Switch");
+        info.setClassName("android.widget.CheckBox");
         info.setCheckable(true);
         info.setChecked(checkBox.isChecked());
         StringBuilder sb = new StringBuilder();

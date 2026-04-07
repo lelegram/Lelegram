@@ -347,6 +347,7 @@ public class QrActivity extends BaseFragment {
         closeImageView.setImageResource(R.drawable.ic_ab_back);
         closeImageView.setScaleType(ImageView.ScaleType.CENTER);
         closeImageView.setOnClickListener(v -> finishFragment());
+        closeImageView.setContentDescription(LocaleController.getString("AccDescrGoBack", R.string.AccDescrGoBack));
         rootLayout.addView(closeImageView, LayoutHelper.createFrame(34, 34));
 
         emojiThemeIcon = Bitmap.createBitmap(AndroidUtilities.dp(32), AndroidUtilities.dp(32), Bitmap.Config.ARGB_8888);
@@ -769,8 +770,9 @@ public class QrActivity extends BaseFragment {
         Uri uri = AndroidUtilities.getBitmapShareUri(bitmap, "qr_tmp.jpg", Bitmap.CompressFormat.JPEG);
         if (uri != null) {
             Intent intent = new Intent(Intent.ACTION_SEND)
-                    .setType("image/*")
-                    .putExtra(Intent.EXTRA_STREAM, uri);
+                    .putExtra(Intent.EXTRA_STREAM, uri)
+                    .setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .setDataAndType(uri, "image/jpeg");
             try {
                 Intent chooserIntent = Intent.createChooser(intent, LocaleController.getString(R.string.InviteByQRCode));
                 getParentActivity().startActivityForResult(chooserIntent, 500);
@@ -1852,6 +1854,11 @@ public class QrActivity extends BaseFragment {
             }
             return themeDescriptions;
         }
+    }
+
+    @Override
+    public boolean isActionBarCrossfadeEnabled() {
+        return false;
     }
 
     interface OnItemSelectedListener {

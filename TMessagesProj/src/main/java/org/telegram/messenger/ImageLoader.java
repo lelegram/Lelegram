@@ -21,6 +21,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -38,6 +39,7 @@ import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.ColorUtils;
+import androidx.palette.graphics.Palette;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -1469,7 +1471,7 @@ public class ImageLoader {
                                 image = MediaStore.Images.Thumbnails.getThumbnail(ApplicationLoader.applicationContext.getContentResolver(), mediaId, MediaStore.Images.Thumbnails.MINI_KIND, opts);
                             }
                         }
-                        if (image == null) {
+                        if (!mediaIsVideo && image == null) {
                             if (image == null) {
                                 FileInputStream is;
                                 if (secureDocumentKey != null) {
@@ -1563,6 +1565,26 @@ public class ImageLoader {
                                     }
                                 }
                                 if (image != null) {
+                                    var blur = cacheImage.filter.contains("_blur");
+                                    var darken = cacheImage.filter.contains("_darken");
+                                    if (blur || darken) {
+                                        blurType = 0;
+                                        var width = blur ? 150 : image.getWidth();
+                                        var height = blur ? 150 : image.getHeight();
+                                        var bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                                        var canvas = new Canvas(bitmap);
+                                        canvas.drawBitmap(image, null, new Rect(0, 0, width, height), null);
+                                        if (blur) {
+                                            Utilities.stackBlurBitmap(bitmap, 3);
+                                        }
+                                        if (darken) {
+                                            var palette = Palette.from(image).generate();
+                                            canvas.drawColor((palette.getDarkMutedColor(0xFF547499) & 0x00FFFFFF) | 0x44000000);
+                                        }
+                                        image.recycle();
+                                        image = bitmap;
+                                        blured = true;
+                                    }
                                     if (checkInversion) {
                                         Bitmap b = image;
                                         int w = image.getWidth();
@@ -2423,70 +2445,18 @@ public class ImageLoader {
 
         try {
             if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-                File path = Environment.getExternalStorageDirectory();
-                if (!TextUtils.isEmpty(SharedConfig.storageCacheDir)) {
-                    ArrayList<File> dirs = AndroidUtilities.getRootDirs();
-                    if (dirs != null) {
-                        for (int a = 0, N = dirs.size(); a < N; a++) {
-                            File dir = dirs.get(a);
-                            FileLog.d("root dir " + a + " " + dir);
-                            if (dir.getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
-                                path = dir;
-                                break;
-                            }
-                        }
-                    }
-                    if (!path.getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
-                        File[] dirsDebug = ApplicationLoader.applicationContext.getExternalFilesDirs(null);
-                        if (dirsDebug != null) {
-                            for (int a = 0; a < dirsDebug.length; a++) {
-                                if (dirsDebug[a] == null) {
-                                    continue;
-                                }
-                                FileLog.d("dirsDebug " + a + " " + dirsDebug[a]);
-                            }
-                        }
-                    }
-                }
-
-                FileLog.d("external storage = " + path);
+                telegramPath = SharedConfig.getTelegramPath();
 
                 File publicMediaDir = null;
                 if (Build.VERSION.SDK_INT >= 30) {
-                    File newPath;
                     try {
                         if (ApplicationLoader.applicationContext.getExternalMediaDirs().length > 0) {
                             publicMediaDir = getPublicStorageDir();
-                            publicMediaDir = new File(publicMediaDir, "Telegram");
+                            publicMediaDir = new File(publicMediaDir, "Lelegram");
                             publicMediaDir.mkdirs();
                         }
                     } catch (Exception e) {
                         FileLog.e(e);
-                    }
-                    newPath = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                    telegramPath = new File(newPath, "Telegram");
-                } else {
-                    boolean isSdCard = !TextUtils.isEmpty(SharedConfig.storageCacheDir) && path.getAbsolutePath().startsWith(SharedConfig.storageCacheDir);
-                    if (!isSdCard) {
-                        if (!(path.exists() ? path.isDirectory() : path.mkdirs()) || !path.canWrite()) {
-                            FileLog.d("can't write to this directory = " + path + " use files dir");
-                            path = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-                        }
-                    }
-                    telegramPath = new File(path, "Telegram");
-                }
-                telegramPath.mkdirs();
-
-                if (Build.VERSION.SDK_INT >= 19 && !telegramPath.isDirectory()) {
-                    ArrayList<File> dirs = AndroidUtilities.getDataDirs();
-                    for (int a = 0, N = dirs.size(); a < N; a++) {
-                        File dir = dirs.get(a);
-                        if (dir != null && !TextUtils.isEmpty(SharedConfig.storageCacheDir) && dir.getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
-                            path = dir;
-                            telegramPath = new File(path, "Telegram");
-                            telegramPath.mkdirs();
-                            break;
-                        }
                     }
                 }
 

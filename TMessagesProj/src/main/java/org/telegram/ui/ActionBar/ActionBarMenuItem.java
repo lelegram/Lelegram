@@ -21,6 +21,7 @@ import android.graphics.Canvas;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.os.Build;
@@ -304,7 +305,7 @@ public class ActionBarMenuItem extends FrameLayout {
             }
         } else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
             if (showSubmenuByMove && hasSubMenu() && (popupWindow == null || !popupWindow.isShowing())) {
-                if (event.getY() > getHeight()) {
+                if ((event.getY() > getHeight() && !popupLayout.shownFromBottom) || (event.getY() < 0 && popupLayout.shownFromBottom)) {
                     if (getParent() != null) {
                         getParent().requestDisallowInterceptTouchEvent(true);
                     }
@@ -342,6 +343,8 @@ public class ActionBarMenuItem extends FrameLayout {
                     }
                 }
             }
+        } else if (longClickEnabled && hasSubMenu() && (popupWindow == null || !popupWindow.isShowing()) && event.getActionMasked() == MotionEvent.ACTION_UP) {
+            AndroidUtilities.cancelRunOnUIThread(showMenuRunnable);
         } else if (popupWindow != null && popupWindow.isShowing() && event.getActionMasked() == MotionEvent.ACTION_UP) {
             if (selectedMenuView != null) {
                 selectedMenuView.setSelected(false);
@@ -521,6 +524,10 @@ public class ActionBarMenuItem extends FrameLayout {
 
     public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text, Theme.ResourcesProvider resourcesProvider) {
         return addSubItem(id, icon, null, text, true, false, resourcesProvider);
+    }
+
+    public ActionBarMenuSubItem addSubItem(int id, Drawable icon, CharSequence text, Theme.ResourcesProvider resourcesProvider) {
+        return addSubItem(id, 0, icon, text, true, false, resourcesProvider);
     }
 
     public ActionBarMenuSubItem addSubItem(int id, int icon, CharSequence text, boolean needCheck) {
@@ -2584,13 +2591,26 @@ public class ActionBarMenuItem extends FrameLayout {
         lazyList.clear();
     }
 
+    public static FrameLayout addColoredGap(ActionBarPopupWindow.ActionBarPopupWindowLayout windowLayout, Theme.ResourcesProvider resourcesProvider) {
+        CombinedDrawable shadowDrawable = new CombinedDrawable(new ColorDrawable(Theme.getColor(Theme.key_actionBarDefaultSubmenuSeparator, resourcesProvider)), Theme.getThemedDrawable(windowLayout.getContext(), R.drawable.greydivider, Theme.getColor(Theme.key_windowBackgroundGrayShadow, resourcesProvider)));
+        shadowDrawable.setFullsize(true);
+        FrameLayout gap = new FrameLayout(windowLayout.getContext());
+        gap.setBackground(shadowDrawable);
+        windowLayout.addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
+        return gap;
+    }
+
     public static ActionBarMenuSubItem addItem(ViewGroup windowLayout, int icon, CharSequence text, boolean needCheck, Theme.ResourcesProvider resourcesProvider) {
         return addItem(false, false, windowLayout, icon, text, needCheck, resourcesProvider);
     }
 
     public static ActionBarMenuSubItem addItem(boolean first, boolean last, ViewGroup windowLayout, int icon, CharSequence text, boolean needCheck, Theme.ResourcesProvider resourcesProvider) {
+        return addItem(first, last, windowLayout, icon, null, text, needCheck, resourcesProvider);
+    }
+
+    public static ActionBarMenuSubItem addItem(boolean first, boolean last, ViewGroup windowLayout, int icon, Drawable iconDrawable, CharSequence text, boolean needCheck, Theme.ResourcesProvider resourcesProvider) {
         ActionBarMenuSubItem cell = new ActionBarMenuSubItem(windowLayout.getContext(), needCheck, first, last, resourcesProvider);
-        cell.setTextAndIcon(text, icon);
+        cell.setTextAndIcon(text, icon, iconDrawable);
         cell.setMinimumWidth(AndroidUtilities.dp(196));
         windowLayout.addView(cell);
         LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) cell.getLayoutParams();

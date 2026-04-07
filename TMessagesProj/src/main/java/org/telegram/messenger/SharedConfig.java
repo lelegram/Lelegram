@@ -325,6 +325,7 @@ public class SharedConfig {
     public static int callEncryptionHintDisplayedCount;
     public static boolean shadowsInSections;
     public static boolean debugViewMetrics;
+    public static boolean useEightPatch;
     public static boolean photoHighQualityDefault;
 
     public static TLRPC.TL_help_appUpdate pendingAppUpdate;
@@ -562,21 +563,21 @@ public class SharedConfig {
                 if (pendingAppUpdate != null) {
                     long updateTime = 0;
                     int updateVersion = 0;
-                    String updateVersionString = null;
+                    //String updateVersionString = null;
                     try {
                         PackageInfo packageInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
                         updateVersion = packageInfo.versionCode;
-                        updateVersionString = packageInfo.versionName;
+                        //updateVersionString = packageInfo.versionName;
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
                     if (updateVersion == 0) {
                         updateVersion = buildVersion();
                     }
-                    if (updateVersionString == null) {
-                        updateVersionString = BuildVars.BUILD_VERSION_STRING;
-                    }
-                    if (pendingAppUpdateBuildVersion != updateVersion || pendingAppUpdate.version == null || updateVersionString.compareTo(pendingAppUpdate.version) >= 0 || BuildVars.DEBUG_PRIVATE_VERSION) {
+                    ///if (updateVersionString == null) {
+                    ///    updateVersionString = BuildVars.BUILD_VERSION_STRING;
+                    ///}
+                    if (pendingAppUpdateBuildVersion != updateVersion || pendingAppUpdate.version == null/* || updateVersionString.compareTo(pendingAppUpdate.version) >= 0*/ || BuildVars.DEBUG_PRIVATE_VERSION) {
                         pendingAppUpdate = null;
                         AndroidUtilities.runOnUIThread(SharedConfig::saveConfig);
                     }
@@ -594,7 +595,7 @@ public class SharedConfig {
             nextMediaTap = preferences.getBoolean("next_media_on_tap", true);
             recordViaSco = preferences.getBoolean("record_via_sco", false);
             customTabs = preferences.getBoolean("custom_tabs", true);
-            inappBrowser = preferences.getBoolean("inapp_browser", true);
+            inappBrowser = preferences.getBoolean("inapp_browser", false);
             adaptableColorInBrowser = preferences.getBoolean("adaptableBrowser", false);
             onlyLocalInstantView = preferences.getBoolean("onlyLocalInstantView", BuildVars.DEBUG_PRIVATE_VERSION);
             directShare = preferences.getBoolean("direct_share", true);
@@ -609,7 +610,7 @@ public class SharedConfig {
             bubbleRadius = preferences.getInt("bubbleRadius", 17);
             ivFontSize = preferences.getInt("iv_font_size", fontSize);
             allowBigEmoji = preferences.getBoolean("allowBigEmoji", true);
-            useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
+            useSystemEmoji = false;//preferences.getBoolean("useSystemEmoji", false);
             useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
             forceForumTabs = preferences.getBoolean("forceForumTabs", false);
             fastWallpaperDisabled = preferences.getBoolean("fastWallpaperDisabled", false);
@@ -677,6 +678,7 @@ public class SharedConfig {
             debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
             shadowsInSections = preferences.getBoolean("shadowsInSections", false);
             debugViewMetrics = preferences.getBoolean("debugViewMetrics", false);
+            useEightPatch = preferences.getBoolean("useEightPatch", false);
             photoHighQualityDefault = preferences.getBoolean("photoHighQualityDefault", false);
 
             loadDebugConfig(preferences);
@@ -786,24 +788,24 @@ public class SharedConfig {
     }
 
     public static boolean setNewAppVersionAvailable(TLRPC.TL_help_appUpdate update) {
-        String updateVersionString = null;
+        //String updateVersionString = null;
         int versionCode = 0;
         try {
             PackageInfo packageInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
             versionCode = packageInfo.versionCode;
-            updateVersionString = packageInfo.versionName;
+            //updateVersionString = packageInfo.versionName;
         } catch (Exception e) {
             FileLog.e(e);
         }
         if (versionCode == 0) {
             versionCode = buildVersion();
         }
-        if (updateVersionString == null) {
-            updateVersionString = BuildVars.BUILD_VERSION_STRING;
-        }
-        if (update.version == null || versionBiggerOrEqual(updateVersionString, update.version)) {
-            return false;
-        }
+        //if (updateVersionString == null) {
+        //    updateVersionString = BuildVars.BUILD_VERSION_STRING;
+        //}
+        //if (update.version == null || versionBiggerOrEqual(updateVersionString, update.version)) {
+        //    return false;
+        //}
         pendingAppUpdate = update;
         pendingAppUpdateBuildVersion = versionCode;
         saveConfig();
@@ -1572,7 +1574,7 @@ public class SharedConfig {
     public static void checkSaveToGalleryFiles() {
         Utilities.globalQueue.postRunnable(() -> {
             try {
-                File telegramPath = new File(Environment.getExternalStorageDirectory(), "Telegram");
+                File telegramPath = SharedConfig.getTelegramPath();;
                 File imagePath = new File(telegramPath, "Telegram Images");
                 imagePath.mkdir();
                 File videoPath = new File(telegramPath, "Telegram Video");
@@ -1597,6 +1599,28 @@ public class SharedConfig {
                 FileLog.e(e);
             }
         });
+    }
+
+    public static File getTelegramPath() {
+        File path = null;
+        if (!TextUtils.isEmpty(SharedConfig.storageCacheDir)) {
+            if (!Environment.getExternalStorageDirectory().getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
+                File[] dirs = ApplicationLoader.applicationContext.getExternalFilesDirs(null);
+                for (File dir : dirs) {
+                    if (dir.getAbsolutePath().startsWith(SharedConfig.storageCacheDir)) {
+                        path = dir;
+                        break;
+                    }
+                }
+            }
+        }
+        if (path == null) {
+            path = ApplicationLoader.applicationContext.getExternalFilesDir(null);
+        }
+        File telegramPath = new File(path, "Telegram");
+        //noinspection ResultOfMethodCallIgnored
+        telegramPath.mkdirs();
+        return telegramPath;
     }
 
     public static int getChatSwipeAction(int currentAccount) {

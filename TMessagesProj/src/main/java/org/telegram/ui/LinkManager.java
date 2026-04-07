@@ -56,6 +56,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 
+import com.fylnx.lelegram.helpers.SettingsHelper;
+import com.fylnx.lelegram.helpers.UserHelper;
+
 public class LinkManager {
 
     private final LaunchActivity activity;
@@ -131,6 +134,12 @@ public class LinkManager {
             return handleNewBot(second, segments.size() >= 3 ? segments.get(2) : null, uri.getQueryParameter("name"));
         }
 
+        if ("lelesettings".equals(first) || "nekosettings".equals(first)) {
+            SettingsHelper.processDeepLink(uri, this::presentFragment,
+                    () -> getBulletinFactory().createErrorBulletin(LocaleController.getString(R.string.UnknownLeleSettingsOption)).show(), progress);
+            return true;
+        }
+
         return false;
     }
 
@@ -176,6 +185,25 @@ public class LinkManager {
 
         if ("settings".equalsIgnoreCase(first))
             return handleSettings(segments.subList(1, segments.size()));
+
+        if ("update".equals(first) || "upgrade".equals(first)) {
+            activity.checkAppUpdate(true, progress);
+            return true;
+        }
+
+        if ("meow".equals(first) || "nya".equals(first)) {
+            getBulletinFactory().createErrorBulletin(LocaleController.getString(R.string.Nya)).show();
+            return true;
+        }
+
+        if ("user".equalsIgnoreCase(first) || "chat".equalsIgnoreCase(first)) {
+            var id = Utilities.parseLong(uri.getQueryParameter("id"));
+            if (id > 0) {
+                UserHelper.getInstance(currentAccount).openByDialogId("chat".equalsIgnoreCase(first) ? -id : id, activity, this::presentFragment, progress);
+                return true;
+            }
+            return false;
+        }
 
         if ("chats".equalsIgnoreCase(first)) {
             if ("search".equalsIgnoreCase(second)) {

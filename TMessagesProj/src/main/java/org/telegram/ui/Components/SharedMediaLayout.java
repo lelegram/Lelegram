@@ -175,8 +175,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.forward.ForwardContext;
+import com.fylnx.lelegram.forward.ForwardDrawable;
+import com.fylnx.lelegram.forward.ForwardItem;
+import com.fylnx.lelegram.forward.ForwardRestrictionsHelper;
+
 @SuppressWarnings("unchecked")
-public class SharedMediaLayout extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, DialogCell.DialogCellDelegate {
+public class SharedMediaLayout extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, DialogCell.DialogCellDelegate, ForwardContext {
 
     private final static boolean SHOW_CONTEXT_VIEW_AS_BUBBLE = true;
 
@@ -460,6 +466,23 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     }
 
     @Override
+    public ArrayList<MessageObject> getForwardingMessages() {
+        ArrayList<MessageObject> fmessages = new ArrayList<>();
+        for (int a = 1; a >= 0; a--) {
+            ArrayList<Integer> ids = new ArrayList<>();
+            for (int b = 0; b < selectedFiles[a].size(); b++) {
+                ids.add(selectedFiles[a].keyAt(b));
+            }
+            Collections.sort(ids);
+            for (Integer id1 : ids) {
+                if (id1 > 0) {
+                    fmessages.add(selectedFiles[a].get(id1));
+                }
+            }
+        }
+        return fmessages;
+    }
+
     public void onButtonClicked(DialogCell dialogCell) {
 
     }
@@ -694,6 +717,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public ImageView photoVideoOptionsItem;
     private RLottieImageView optionsSearchImageView;
     private ActionBarMenuItem forwardItem;
+    private ActionBarMenuItem forwardNoQuoteItem;
     private ActionBarMenuItem gotoItem;
     private ActionBarMenuItem pinItem;
     private ActionBarMenuItem unpinItem;
@@ -1501,7 +1525,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private SharedMediaData[] sharedMediaData = new SharedMediaData[9];
     private SharedMediaPreloader sharedMediaPreloader;
 
-    private final static int forward = 100;
+    private final static int forward = ForwardItem.ID_FORWARD;
+    private final static int forward_noquote = ForwardItem.ID_FORWARD_NOQUOTE;
+    private final static int forward_nocaption = ForwardItem.ID_FORWARD_NOCAPTION;
     private final static int delete = 101;
     private final static int gotochat = 102;
     private final static int pin = 103;
@@ -2180,16 +2206,18 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         actionModeLayout.addView(selectedMessagesCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, 18, 0, 0, 0));
         actionModeViews.add(selectedMessagesCountTextView);
 
+        if (!isStoriesView()) {
+            gotoItem = new ActionBarMenuItem(context, null, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), false);
+            gotoItem.setIcon(R.drawable.msg_message);
+            gotoItem.setContentDescription(getString("AccDescrGoToMessage", R.string.AccDescrGoToMessage));
+            gotoItem.setDuplicateParentStateEnabled(false);
+            actionModeLayout.addView(gotoItem, new LinearLayout.LayoutParams(dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
+            actionModeViews.add(gotoItem);
+            gotoItem.setOnClickListener(v -> onActionBarItemClick(v, gotochat));
+        }
+
         if (!DialogObject.isEncryptedDialog(dialog_id)) {
             if (!isStoriesView()) {
-                gotoItem = new ActionBarMenuItem(context, null, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), false);
-                gotoItem.setIcon(R.drawable.msg_message);
-                gotoItem.setContentDescription(getString(R.string.AccDescrGoToMessage));
-                gotoItem.setDuplicateParentStateEnabled(false);
-                actionModeLayout.addView(gotoItem, new LinearLayout.LayoutParams(dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
-                actionModeViews.add(gotoItem);
-                gotoItem.setOnClickListener(v -> onActionBarItemClick(v, gotochat));
-
                 forwardItem = new ActionBarMenuItem(context, null, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), false);
                 forwardItem.setIcon(R.drawable.msg_forward);
                 forwardItem.setContentDescription(getString(R.string.Forward));
@@ -2197,6 +2225,18 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 actionModeLayout.addView(forwardItem, new LinearLayout.LayoutParams(dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
                 actionModeViews.add(forwardItem);
                 forwardItem.setOnClickListener(v -> onActionBarItemClick(v, forward));
+                forwardItem.setDelegate(id -> onActionBarItemClick(forwardItem, id));
+
+                if (LeleConfig.showNoQuoteForward) {
+                    forwardNoQuoteItem = new ActionBarMenuItem(context, null, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), false);
+                    forwardNoQuoteItem.setIcon(R.drawable.msg_forward);
+                    forwardNoQuoteItem.setContentDescription(LocaleController.getString(R.string.NoQuoteForward));
+                    forwardNoQuoteItem.setDuplicateParentStateEnabled(false);
+                    actionModeLayout.addView(forwardNoQuoteItem, new LinearLayout.LayoutParams(AndroidUtilities.dp(54), ViewGroup.LayoutParams.MATCH_PARENT));
+                    actionModeViews.add(forwardNoQuoteItem);
+                    forwardNoQuoteItem.setOnClickListener(v -> onActionBarItemClick(v, forward_noquote));
+                    forwardNoQuoteItem.setIcon(new ForwardDrawable(ForwardItem.ID_FORWARD_NOQUOTE, false));
+                }
             }
 
             pinItem = new ActionBarMenuItem(context, null, getThemedColor(Theme.key_actionBarActionModeDefaultSelector), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), false);
@@ -3097,10 +3137,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         } else {
                             i = position;
                         }
-                        participant = chatUsersAdapter.chatInfo.participants.participants.get(i);
                         if (i < 0 || i >= chatUsersAdapter.chatInfo.participants.participants.size()) {
                             return;
                         }
+                        participant = chatUsersAdapter.chatInfo.participants.participants.get(i);
                         onMemberClick(participant, false, view);
                     } else if (mediaPage.listView.getAdapter() == groupUsersSearchAdapter) {
                         long user_id;
@@ -3815,13 +3855,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         if (forwardItem == null) {
             return;
         }
-        boolean noforwards = profileActivity.getMessagesController().isPeerNoForwards(dialog_id) || hasNoforwardsMessage();
+        boolean noforwards = ForwardRestrictionsHelper.shouldBlockForward(profileActivity.getMessagesController().isPeerNoForwards(dialog_id), hasNoforwardsMessage());
         forwardItem.setAlpha(noforwards ? 0.5f : 1f);
+        if (forwardNoQuoteItem != null) forwardNoQuoteItem.setAlpha(noforwards ? 0.5f : 1f);
         if (noforwards && forwardItem.getBackground() != null) {
             forwardItem.setBackground(null);
+            if (forwardNoQuoteItem != null) forwardNoQuoteItem.setBackground(null);
         } else if (!noforwards && forwardItem.getBackground() == null) {
             forwardItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 5));
+            if (forwardNoQuoteItem != null) forwardNoQuoteItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 5));
         }
+        ForwardItem.setupForwardItem(forwardItem, ForwardItem.hasCaption(getForwardingMessages()), resourcesProvider, id -> onActionBarItemClick(forwardItem, id));
     }
     private boolean hasNoforwardsMessage() {
         boolean hasNoforwardsMessage = false;
@@ -5236,32 +5280,43 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 actionBar.closeSearchField();
                 cantDeleteMessagesCount = 0;
             }, null, resourcesProvider);
-        } else if (id == forward) {
+        } else if (id == forward || id == forward_noquote || id == forward_nocaption) {
+            boolean peerNoforwards = false;
             if (userInfo != null) {
-                if (profileActivity.getMessagesController().isUserNoForwards(userInfo)) {
-                    if (fwdRestrictedHint != null) {
-                        fwdRestrictedHint.setText(getString(R.string.ForwardsRestrictedInfoUser));
-                        fwdRestrictedHint.showForView(v, true);
-                    }
-                    return;
-                }
-            }
-            if (info != null) {
+                peerNoforwards = profileActivity.getMessagesController().isUserNoForwards(userInfo);
+            } else if (info != null) {
                 TLRPC.Chat chat = profileActivity.getMessagesController().getChat(info.id);
-                if (profileActivity.getMessagesController().isChatNoForwards(chat)) {
-                    if (fwdRestrictedHint != null) {
-                        fwdRestrictedHint.setText(ChatObject.isChannel(chat) && !chat.megagroup ? getString(R.string.ForwardsRestrictedInfoChannel) :
-                                getString(R.string.ForwardsRestrictedInfoGroup));
-                        fwdRestrictedHint.showForView(v, true);
-                    }
-                    return;
-                }
+                peerNoforwards = profileActivity.getMessagesController().isChatNoForwards(chat);
             }
-            if (hasNoforwardsMessage()) {
+            boolean messageNoforwards = hasNoforwardsMessage();
+            if (ForwardRestrictionsHelper.shouldBlockForward(peerNoforwards, messageNoforwards)) {
                 if (fwdRestrictedHint != null) {
-                    fwdRestrictedHint.setText(getString("ForwardsRestrictedInfoBot", R.string.ForwardsRestrictedInfoBot));
+                    if (peerNoforwards) {
+                        if (userInfo != null) {
+                            fwdRestrictedHint.setText(getString(R.string.ForwardsRestrictedInfoUser));
+                        } else {
+                            TLRPC.Chat chat = profileActivity.getMessagesController().getChat(info.id);
+                            fwdRestrictedHint.setText(ChatObject.isChannel(chat) && !chat.megagroup ? getString(R.string.ForwardsRestrictedInfoChannel) :
+                                    getString(R.string.ForwardsRestrictedInfoGroup));
+                        }
+                    } else {
+                        fwdRestrictedHint.setText(getString("ForwardsRestrictedInfoBot", R.string.ForwardsRestrictedInfoBot));
+                    }
                     fwdRestrictedHint.showForView(v, true);
                 }
+                return;
+            }
+            ForwardItem.setLastForwardOption(id);
+            setForwardParams(id == forward_noquote, id == forward_nocaption);
+            if (LeleConfig.quickForward) {
+                openShareAlert(profileActivity, null, () -> {
+                    for (int a = 1; a >= 0; a--) {
+                        selectedFiles[a].clear();
+                    }
+                    cantDeleteMessagesCount = 0;
+                    showActionMode(false);
+                    updateRowsSelection(true);
+                });
                 return;
             }
 
@@ -5270,19 +5325,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             args.putBoolean("canSelectTopics", true);
             args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
             DialogsActivity fragment = new DialogsActivity(args);
+            fragment.forwardContext = this;
+            var forwardParams = getForwardParams();
+            ArrayList<MessageObject> fmessages = getForwardingMessages();
             fragment.setDelegate((fragment1, dids, message, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment) -> {
-                ArrayList<MessageObject> fmessages = new ArrayList<>();
                 for (int a = 1; a >= 0; a--) {
-                    ArrayList<Integer> ids = new ArrayList<>();
-                    for (int b = 0; b < selectedFiles[a].size(); b++) {
-                        ids.add(selectedFiles[a].keyAt(b));
-                    }
-                    Collections.sort(ids);
-                    for (Integer id1 : ids) {
-                        if (id1 > 0) {
-                            fmessages.add(selectedFiles[a].get(id1));
-                        }
-                    }
                     selectedFiles[a].clear();
                 }
                 cantDeleteMessagesCount = 0;
@@ -5296,9 +5343,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     for (int a = 0; a < dids.size(); a++) {
                         long did = dids.get(a).dialogId;
                         if (message != null) {
-                            profileActivity.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(message.toString(), did, null, null, null, true, null, null, null, true, 0, 0, null, false));
+                            profileActivity.getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(message.toString(), did, null, null, null, true, null, null, null, forwardParams.notify, forwardParams.scheduleDate, 0, null, false));
                         }
-                        profileActivity.getSendMessagesHelper().sendMessage(fmessages, did, false, false, true, 0, 0);
+                        profileActivity.getSendMessagesHelper().sendMessage(fmessages, did, forwardParams.noQuote, forwardParams.noCaption, forwardParams.notify, forwardParams.scheduleDate, 0);
                     }
                     fragment1.finishFragment();
                     UndoView undoView = null;
@@ -5315,6 +5362,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 } else {
                     long did = dids.get(0).dialogId;
                     Bundle args1 = new Bundle();
+                    args1.putBoolean("forward_noquote", forwardParams.noQuote);
+                    args1.putBoolean("forward_nocaption", forwardParams.noCaption);
                     args1.putBoolean("scrollToTopOnResume", true);
                     if (DialogObject.isEncryptedDialog(did)) {
                         args1.putInt("enc_id", DialogObject.getEncryptedChatId(did));
@@ -10885,7 +10934,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 emptyStubView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                 return new RecyclerListView.Holder(emptyStubView);
             }
-            View view = new UserCell(mContext, 9, 0, true, false, resourcesProvider);
+            View view = new UserCell(mContext, 9, 0, true, false, false, resourcesProvider);
             view.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             return new RecyclerListView.Holder(view);
         }
@@ -11247,6 +11296,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         if (forwardItem != null) {
             arrayList.add(new ThemeDescription(forwardItem.getIconView(), ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_actionBarActionModeDefaultIcon));
             arrayList.add(new ThemeDescription(forwardItem, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
+        }
+        if (forwardNoQuoteItem != null) {
+            arrayList.add(new ThemeDescription(forwardNoQuoteItem.getIconView(), ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText2));
+            arrayList.add(new ThemeDescription(forwardNoQuoteItem, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));
         }
         arrayList.add(new ThemeDescription(closeButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, new Drawable[]{backDrawable}, null, Theme.key_actionBarActionModeDefaultIcon));
         arrayList.add(new ThemeDescription(closeButton, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_actionBarActionModeDefaultSelector));

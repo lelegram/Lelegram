@@ -91,6 +91,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.location.LeleLocationSource;
+
 public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLayout implements NotificationCenter.NotificationCenterDelegate {
 
     private ImageView locationButton;
@@ -1563,6 +1566,9 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         for (int i = providers.size() - 1; i >= 0; i--) {
             l = lm.getLastKnownLocation(providers.get(i));
             if (l != null) {
+                if (LeleConfig.mapDriftingFix) {
+                    LeleLocationSource.transform(l);
+                }
                 break;
             }
         }

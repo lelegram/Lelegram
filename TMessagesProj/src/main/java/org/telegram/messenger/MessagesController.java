@@ -131,6 +131,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import com.fylnx.lelegram.LeleConfig;
+
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public int lastKnownSessionsCount;
@@ -1259,6 +1261,7 @@ public class MessagesController extends BaseController implements NotificationCe
         public ArrayList<Long> neverShow = new ArrayList<>();
         public LongSparseIntArray pinnedDialogs = new LongSparseIntArray();
         public ArrayList<TLRPC.Dialog> dialogs = new ArrayList<>();
+        public String emoticon;
         public ArrayList<TLRPC.Dialog> dialogsForward = new ArrayList<>();
         public int color;
         public boolean title_noanimate;
@@ -1554,7 +1557,7 @@ public class MessagesController extends BaseController implements NotificationCe
         revokeTimePmLimit = mainPreferences.getInt("revokeTimePmLimit", 2147483647);
         canRevokePmInbox = mainPreferences.getBoolean("canRevokePmInbox", canRevokePmInbox);
         preloadFeaturedStickers = mainPreferences.getBoolean("preloadFeaturedStickers", false);
-        youtubePipType = mainPreferences.getString("youtubePipType", "disabled");
+        youtubePipType = "enabled";//mainPreferences.getString("youtubePipType", "disabled");
         keepAliveService = mainPreferences.getBoolean("keepAliveService", false);
         backgroundConnection = mainPreferences.getBoolean("keepAliveService", false);
         promoDialogId = mainPreferences.getLong("proxy_dialog", 0);
@@ -1624,7 +1627,7 @@ public class MessagesController extends BaseController implements NotificationCe
         verifyAgeMin = mainPreferences.getInt("verifyAgeMin", 18);
         premiumBotUsername = mainPreferences.getString("premiumBotUsername", null);
         premiumLocked = mainPreferences.getBoolean("premiumLocked", false);
-        starsLocked = mainPreferences.getBoolean("starsLocked", true);
+        starsLocked = mainPreferences.getBoolean("starsLocked", false);
         transcribeButtonPressed = mainPreferences.getInt("transcribeButtonPressed", 0);
         forumUpgradeParticipantsMin = mainPreferences.getInt("forumUpgradeParticipantsMin", 200);
         topicsPinnedLimit = mainPreferences.getInt("topicsPinnedLimit", 3);
@@ -2281,6 +2284,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                                     MessageObject oldMsg = oldMsgs.get(j);
                                                     if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                         newMsg.deleted = oldMsg.deleted;
+                                                        newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                         break;
                                                     }
                                                 }
@@ -2319,6 +2323,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                                 MessageObject oldMsg = oldMsgs.get(j);
                                                 if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                     newMsg.deleted = oldMsg.deleted;
+                                                    newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                     break;
                                                 }
                                             }
@@ -2595,14 +2600,15 @@ public class MessagesController extends BaseController implements NotificationCe
         getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
     }
 
-    private Runnable loadAppConfigRunnable = this::loadAppConfig;
+    private volatile long lastAppConfigCheckTime = System.currentTimeMillis();
+    private final Runnable loadAppConfigRunnable = this::loadAppConfig;
 
     public void loadAppConfig() {
         loadAppConfig(true);
     }
 
     public void loadAppConfig(boolean force) {
-        AndroidUtilities.cancelRunOnUIThread(loadAppConfigRunnable);
+        if (!getUserConfig().isClientActivated()) return;
         if (force) {
             appConfigFetcher.forceRequest(currentAccount, 0);
         }
@@ -2610,8 +2616,6 @@ public class MessagesController extends BaseController implements NotificationCe
             if (config != null && config.config instanceof TLRPC.TL_jsonObject) {
                 applyAppConfig((TLRPC.TL_jsonObject) config.config);
             }
-            AndroidUtilities.cancelRunOnUIThread(loadAppConfigRunnable);
-            AndroidUtilities.runOnUIThread(loadAppConfigRunnable, 4 * 60 * 1000 + 10);
         }));
     }
 
@@ -2952,7 +2956,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "youtube_pip": {
+                /*case "youtube_pip": {
                     if (value.value instanceof TLRPC.TL_jsonString) {
                         TLRPC.TL_jsonString string = (TLRPC.TL_jsonString) value.value;
                         if (!string.value.equals(youtubePipType)) {
@@ -2962,7 +2966,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                     break;
-                }
+                }*/
                 case "background_connection": {
                     if (value.value instanceof TLRPC.TL_jsonBool) {
                         TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
@@ -5735,7 +5739,7 @@ public class MessagesController extends BaseController implements NotificationCe
             Theme.checkCurrentRemoteTheme(false);
 
             if (config.static_maps_provider == null) {
-                config.static_maps_provider = "telegram";
+                config.static_maps_provider = "telegram,google:AIzaSyB0y3zA4LbA04ZPaHKsr_Xt5ZQWbMftj8I";
             }
 
             mapKey = null;
@@ -6615,6 +6619,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
+        if (LeleConfig.shouldNOTTrustMe) {
+            return false;
+        }
         if (chat == null) {
             return false;
         }
@@ -7471,6 +7478,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
+        if (array == null) return false;
         final TLRPC.ChannelParticipant participant = array.get(uid);
         return participant instanceof TLRPC.TL_channelParticipantAdmin || participant instanceof TLRPC.TL_channelParticipantCreator;
     }
@@ -7491,6 +7499,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
+        if (array == null) return false;
         final TLRPC.ChannelParticipant participant = array.get(uid);
         return participant instanceof TLRPC.TL_channelParticipantCreator;
     }
@@ -9188,12 +9197,149 @@ public class MessagesController extends BaseController implements NotificationCe
                         Integer id = messages.get(a);
                         if (obj.getId() == id) {
                             obj.deleted = true;
+                            obj.messageOwner.deleted = true;
                             break;
                         }
                     }
                 }
             }
         }
+    }
+
+    private void addDeletedReplacement(LongSparseArray<ArrayList<MessageObject>> replacements, MessageObject obj) {
+        if (replacements == null || obj == null || obj.messageOwner == null) {
+            return;
+        }
+        obj.deleted = true;
+        obj.messageOwner.deleted = true;
+        long dialogId = obj.getDialogId();
+        ArrayList<MessageObject> dialogMessages = replacements.get(dialogId);
+        if (dialogMessages == null) {
+            dialogMessages = new ArrayList<>();
+            replacements.put(dialogId, dialogMessages);
+        }
+        for (int i = 0; i < dialogMessages.size(); i++) {
+            if (dialogMessages.get(i).getId() == obj.getId()) {
+                return;
+            }
+        }
+        dialogMessages.add(new MessageObject(currentAccount, obj.messageOwner, false, false));
+    }
+
+    private MessageObject getLastLocalDialogMessage(ArrayList<MessageObject> messages) {
+        MessageObject lastMessage = null;
+        for (int i = 0; messages != null && i < messages.size(); ++i) {
+            MessageObject messageObject = messages.get(i);
+            if (messageObject == null || messageObject.messageOwner == null) {
+                continue;
+            }
+            if (lastMessage == null
+                    || messageObject.messageOwner.date > lastMessage.messageOwner.date
+                    || messageObject.messageOwner.date == lastMessage.messageOwner.date && messageObject.getId() > lastMessage.getId()) {
+                lastMessage = messageObject;
+            }
+        }
+        return lastMessage;
+    }
+
+    private boolean preserveLocallyDeletedDialog(TLRPC.Dialog currentDialog, TLRPC.Dialog updatedDialog, ArrayList<MessageObject> oldMsgs, ArrayList<MessageObject> newMsgs, boolean updateNotifySettings) {
+        if (!LeleConfig.keepDeletedMessages
+                || currentDialog == null
+                || updatedDialog == null
+                || updatedDialog.top_message != 0
+                || newMsgs != null && !newMsgs.isEmpty()) {
+            return false;
+        }
+        MessageObject lastLocalMessage = getLastLocalDialogMessage(oldMsgs);
+        if (lastLocalMessage == null || lastLocalMessage.messageOwner == null) {
+            return false;
+        }
+        for (int i = 0; oldMsgs != null && i < oldMsgs.size(); ++i) {
+            MessageObject oldMsg = oldMsgs.get(i);
+            if (oldMsg == null || oldMsg.messageOwner == null) {
+                continue;
+            }
+            oldMsg.deleted = true;
+            oldMsg.messageOwner.deleted = true;
+        }
+        if (currentDialog.top_message == 0) {
+            currentDialog.top_message = lastLocalMessage.getId();
+        }
+        if (currentDialog.last_message_date == 0) {
+            currentDialog.last_message_date = lastLocalMessage.messageOwner.date;
+        }
+        currentDialog.unread_count = updatedDialog.unread_count;
+        currentDialog.unread_mentions_count = updatedDialog.unread_mentions_count;
+        currentDialog.unread_reactions_count = updatedDialog.unread_reactions_count;
+        currentDialog.read_inbox_max_id = updatedDialog.read_inbox_max_id;
+        currentDialog.read_outbox_max_id = updatedDialog.read_outbox_max_id;
+        currentDialog.pinned = updatedDialog.pinned;
+        currentDialog.pinnedNum = updatedDialog.pinnedNum;
+        currentDialog.folder_id = updatedDialog.folder_id;
+        currentDialog.pts = updatedDialog.pts;
+        currentDialog.flags = updatedDialog.flags;
+        currentDialog.unread_mark = updatedDialog.unread_mark;
+        currentDialog.view_forum_as_messages = updatedDialog.view_forum_as_messages;
+        currentDialog.ttl_period = updatedDialog.ttl_period;
+        if (updateNotifySettings) {
+            currentDialog.notify_settings = updatedDialog.notify_settings;
+        }
+        getMessagesStorage().keepDialogMessagesAsLocalDeleted(currentDialog.id);
+        return true;
+    }
+
+    private void collectDeletedMessagesLocally(long dialogId, ArrayList<Integer> messages, LongSparseArray<ArrayList<MessageObject>> replacements) {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        if (dialogId == 0) {
+            for (int i = 0; i < messages.size(); i++) {
+                addDeletedReplacement(replacements, dialogMessagesByIds.get(messages.get(i)));
+            }
+            return;
+        }
+        ArrayList<MessageObject> objs = dialogMessage.get(dialogId);
+        if (objs == null) {
+            return;
+        }
+        for (int i = 0; i < objs.size(); ++i) {
+            MessageObject obj = objs.get(i);
+            if (obj == null) {
+                continue;
+            }
+            for (int a = 0; a < messages.size(); a++) {
+                if (obj.getId() == messages.get(a)) {
+                    addDeletedReplacement(replacements, obj);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void collectDeletedHistoryLocally(long dialogId, int maxId, LongSparseArray<ArrayList<MessageObject>> replacements) {
+        ArrayList<MessageObject> objs = dialogMessage.get(dialogId);
+        if (objs == null) {
+            return;
+        }
+        for (int i = 0; i < objs.size(); ++i) {
+            MessageObject obj = objs.get(i);
+            if (obj != null && obj.getId() > 0 && obj.getId() <= maxId) {
+                addDeletedReplacement(replacements, obj);
+            }
+        }
+    }
+
+    private void dispatchDeletedReplacements(LongSparseArray<ArrayList<MessageObject>> replacements) {
+        if (replacements == null || replacements.size() == 0) {
+            return;
+        }
+        for (int i = 0; i < replacements.size(); i++) {
+            ArrayList<MessageObject> dialogMessages = replacements.valueAt(i);
+            if (dialogMessages != null && !dialogMessages.isEmpty()) {
+                getNotificationCenter().postNotificationName(NotificationCenter.replaceMessagesObjects, replacements.keyAt(i), dialogMessages, false);
+            }
+        }
+        getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
     }
 
     public void deleteMessages(ArrayList<Integer> messages, ArrayList<Long> randoms, TLRPC.EncryptedChat encryptedChat, long dialogId, int topicId, boolean forAll, int mode) {
@@ -10141,12 +10287,13 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void updateTimerProc() {
+        if (!getUserConfig().isClientActivated()) return;
         long currentTime = System.currentTimeMillis();
 
         checkDeletingTask(false);
         checkReadTasks();
 
-        if (getUserConfig().isClientActivated()) {
+        if (getUserConfig().isClientActivated() && !getUserConfig().getCurrentUser().bot) {
             if (!ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
                 if (ApplicationLoader.mainInterfacePausedStageQueueTime != 0 && Math.abs(ApplicationLoader.mainInterfacePausedStageQueueTime - System.currentTimeMillis()) > 1000) {
                     if (statusSettingState != 1 && (lastStatusUpdateTime == 0 || Math.abs(System.currentTimeMillis() - lastStatusUpdateTime) >= 55000 || offlineSent)) {
@@ -10448,6 +10595,11 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         if (lastPushRegisterSendTime != 0 && Math.abs(SystemClock.elapsedRealtime() - lastPushRegisterSendTime) >= 3 * 60 * 60 * 1000) {
             PushListenerController.sendRegistrationToServer(SharedConfig.pushType, SharedConfig.pushString);
+        }
+        if (Math.abs(currentTime - lastAppConfigCheckTime) >= 4 * 60 * 1000) {
+            AndroidUtilities.cancelRunOnUIThread(loadAppConfigRunnable);
+            AndroidUtilities.runOnUIThread(loadAppConfigRunnable, 200);
+            lastAppConfigCheckTime = currentTime;
         }
         getLocationController().update();
         checkPromoInfoInternal(false);
@@ -11111,7 +11263,7 @@ public class MessagesController extends BaseController implements NotificationCe
         return true;
     }
 
-    protected void removeDeletedMessagesFromArray(final long dialogId, ArrayList<TLRPC.Message> messages) {
+    public void removeDeletedMessagesFromArray(final long dialogId, ArrayList<TLRPC.Message> messages) {
         int maxDeletedId = deletedHistory.get(dialogId, 0);
         if (maxDeletedId == 0) {
             return;
@@ -12186,7 +12338,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 editor.putInt("EnableChannel2", notify_settings.mute_until);
                             }
                         }
-                        getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(notify_settings.android_sound, editor, 0, 0, type, false);
+                        getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(notify_settings.other_sound, editor, 0, 0, type, false);
                         editor.apply();
                         if (loadingNotificationSettings == 0) {
                             getUserConfig().notificationsSettingsLoaded = true;
@@ -13176,6 +13328,12 @@ public class MessagesController extends BaseController implements NotificationCe
                                 break;
                             }
                         }
+                        if (preserveLocallyDeletedDialog(currentDialog, value, oldMsgs, newMsgs, loadType != DIALOGS_LOAD_TYPE_CACHE)) {
+                            if (getTranslateController().isFeatureAvailable(key)) {
+                                getTranslateController().checkDialogMessageSure(key);
+                            }
+                            continue;
+                        }
                         if (oldMsgsDeleted || oldMsgs == null || currentDialog.top_message > 0) {
                             if (value.top_message >= currentDialog.top_message || (oldMsgs == null) != (newMsgs == null) || oldMsgs != null && newMsgs != null && oldMsgs.size() != newMsgs.size()) {
                                 dialogs_dict.put(key, value);
@@ -13202,6 +13360,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                                 MessageObject oldMsg = oldMsgs.get(j);
                                                 if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                     newMsg.deleted = oldMsg.deleted;
+                                                    newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                     break;
                                                 }
                                             }
@@ -13242,6 +13401,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                             MessageObject oldMsg = oldMsgs.get(j);
                                             if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                 newMsg.deleted = oldMsg.deleted;
+                                                newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                 break;
                                             }
                                         }
@@ -13744,6 +13904,12 @@ public class MessagesController extends BaseController implements NotificationCe
                                 break;
                             }
                         }
+                        if (preserveLocallyDeletedDialog(currentDialog, value, oldMsgs, newMsgs, false)) {
+                            if (getTranslateController().isFeatureAvailable(key)) {
+                                getTranslateController().checkDialogMessageSure(key);
+                            }
+                            continue;
+                        }
                         if (BuildVars.LOGS_ENABLED) {
                             FileLog.d("processDialogsUpdate oldMsgs (count = " + (oldMsgs == null ? "null" : oldMsgs.size()) + ") old top_message = " + currentDialog.top_message + " new top_message = " + value.top_message + "  unread_count =" + currentDialog.unread_count + " fromCache=" + fromCache);
                             FileLog.d("processDialogsUpdate oldMsgDeleted " + oldMsgsDeleted);
@@ -13768,6 +13934,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                             MessageObject oldMsg = oldMsgs.get(j);
                                             if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                 newMsg.deleted = oldMsg.deleted;
+                                                newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                 break;
                                             }
                                         }
@@ -13809,6 +13976,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                             MessageObject oldMsg = oldMsgs.get(j);
                                             if (oldMsg != null && oldMsg.getId() == newMsg.getId()) {
                                                 newMsg.deleted = oldMsg.deleted;
+                                                newMsg.messageOwner.deleted = oldMsg.messageOwner.deleted || oldMsg.deleted;
                                                 break;
                                             }
                                         }
@@ -16820,24 +16988,32 @@ public class MessagesController extends BaseController implements NotificationCe
     protected void deleteMessagesByPush(long dialogId, ArrayList<Integer> ids, long channelId) {
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             AndroidUtilities.runOnUIThread(() -> {
-                getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, ids, channelId, false);
-                if (channelId == 0) {
-                    for (int b = 0, size2 = ids.size(); b < size2; b++) {
-                        Integer id = ids.get(b);
-                        MessageObject obj = dialogMessagesByIds.get(id);
-                        if (obj != null) {
-                            obj.deleted = true;
-                        }
-                    }
+                if (LeleConfig.keepDeletedMessages) {
+                    LongSparseArray<ArrayList<MessageObject>> replacements = new LongSparseArray<>();
+                    collectDeletedMessagesLocally(channelId == 0 ? 0 : -channelId, ids, replacements);
+                    dispatchDeletedReplacements(replacements);
                 } else {
-                    ArrayList<MessageObject> objs = dialogMessage.get(-channelId);
-                    if (objs != null) {
-                        for (int i = 0; i < objs.size(); ++i) {
-                            MessageObject obj = objs.get(i);
-                            for (int b = 0, size2 = ids.size(); b < size2; b++) {
-                                if (obj.getId() == ids.get(b)) {
-                                    obj.deleted = true;
-                                    break;
+                    getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, ids, channelId, false);
+                    if (channelId == 0) {
+                        for (int b = 0, size2 = ids.size(); b < size2; b++) {
+                            Integer id = ids.get(b);
+                            MessageObject obj = dialogMessagesByIds.get(id);
+                            if (obj != null) {
+                                obj.deleted = true;
+                                obj.messageOwner.deleted = true;
+                            }
+                        }
+                    } else {
+                        ArrayList<MessageObject> objs = dialogMessage.get(-channelId);
+                        if (objs != null) {
+                            for (int i = 0; i < objs.size(); ++i) {
+                                MessageObject obj = objs.get(i);
+                                for (int b = 0, size2 = ids.size(); b < size2; b++) {
+                                    if (obj.getId() == ids.get(b)) {
+                                        obj.deleted = true;
+                                        obj.messageOwner.deleted = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -16845,8 +17021,12 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             });
             getMessagesStorage().deletePushMessages(dialogId, ids);
-            ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(dialogId, ids, false, true, 0, 0);
-            getMessagesStorage().updateDialogsWithDeletedMessages(dialogId, channelId, ids, dialogIds, false);
+            if (LeleConfig.keepDeletedMessages) {
+                getMessagesStorage().markMessagesAsLocalDeleted(dialogId, ids, false);
+            } else {
+                ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(dialogId, ids, false, true, 0, 0);
+                getMessagesStorage().updateDialogsWithDeletedMessages(dialogId, channelId, ids, dialogIds, false);
+            }
         });
     }
 
@@ -19253,7 +19433,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                         AndroidUtilities.runOnUIThread(() -> getNotificationsController().deleteNotificationChannelGlobal(NotificationsController.TYPE_GROUP));
                                     }
                                 }
-                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.android_sound, editor, 0, 0, NotificationsController.TYPE_GROUP, false);
+                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.other_sound, editor, 0, 0, NotificationsController.TYPE_GROUP, false);
                             } else if (update.peer instanceof TLRPC.TL_notifyUsers) {
                                 if ((update.notify_settings.flags & 1) != 0) {
                                     editor.putBoolean("EnablePreviewAll", update.notify_settings.show_previews);
@@ -19285,7 +19465,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                     storiesEnabled != null && storiesEnabled != newStoriesEnabled || storiesSendersHide != null && storiesSendersHide != newStoriesSendersHide) {
                                     editor.putBoolean("overwrite_stories", true);
                                 }
-                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.android_sound, editor, 0, 0, TYPE_PRIVATE, false);
+                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.other_sound, editor, 0, 0, TYPE_PRIVATE, false);
                                 if ((update.notify_settings.flags & 4) != 0) {
                                     if (notificationsPreferences.getInt("EnableAll2", 0) != update.notify_settings.mute_until) {
                                         editor.putInt("EnableAll2", update.notify_settings.mute_until);
@@ -19311,7 +19491,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                         AndroidUtilities.runOnUIThread(() -> getNotificationsController().deleteNotificationChannelGlobal(NotificationsController.TYPE_CHANNEL));
                                     }
                                 }
-                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.android_sound, editor, 0, 0, TYPE_CHANNEL, false);
+                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.other_sound, editor, 0, 0, TYPE_CHANNEL, false);
                             }
                             getMessagesStorage().updateMutedDialogsFiltersCounters();
                         }
@@ -19759,6 +19939,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TLRPC.TL_updatePendingJoinRequests) {
                         TLRPC.TL_updatePendingJoinRequests update = (TLRPC.TL_updatePendingJoinRequests) baseUpdate;
                         getMemberRequestsController().onPendingRequestsUpdated(update);
+                    } else if (baseUpdate instanceof TLRPC.TL_updateLoginToken) {
+                        getNotificationCenter().postNotificationName(NotificationCenter.onUpdateLoginToken);
                     } else if (baseUpdate instanceof TLRPC.TL_updateSavedRingtones) {
                         getMediaDataController().ringtoneDataStore.loadUserRingtones(true);
                     } else if (baseUpdate instanceof TLRPC.TL_updateTranscribeAudio) {
@@ -20045,6 +20227,7 @@ public class MessagesController extends BaseController implements NotificationCe
         LongSparseIntArray clearHistoryMessagesFinal = clearHistoryMessages;
         getMessagesStorage().getStorageQueue().postRunnable(() -> AndroidUtilities.runOnUIThread(() -> {
             int updateMask = 0;
+            LongSparseArray<ArrayList<MessageObject>> deletedReplacements = LeleConfig.keepDeletedMessages ? new LongSparseArray<>() : null;
             if (markAsReadMessagesInboxFinal != null || markAsReadMessagesOutboxFinal != null) {
                 getNotificationCenter().postNotificationName(NotificationCenter.messagesRead, markAsReadMessagesInboxFinal, markAsReadMessagesOutboxFinal);
                 if (markAsReadMessagesInboxFinal != null) {
@@ -20132,28 +20315,34 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (arrayList == null) {
                         continue;
                     }
-                    getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, arrayList, -dialogId, false);
-                    if (dialogId == 0) {
-                        for (int b = 0, size2 = arrayList.size(); b < size2; b++) {
-                            Integer id = arrayList.get(b);
-                            MessageObject obj = dialogMessagesByIds.get(id);
-                            if (obj != null) {
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("mark messages " + obj.getId() + " deleted");
-                                }
-                                obj.deleted = true;
-                            }
-                        }
+                    if (LeleConfig.keepDeletedMessages) {
+                        collectDeletedMessagesLocally(dialogId, arrayList, deletedReplacements);
                     } else {
-                        ArrayList<MessageObject> objs = dialogMessage.get(dialogId);
-                        if (objs != null) {
-                            for (int i = 0; i < objs.size(); ++i) {
-                                MessageObject obj = objs.get(i);
+                        getNotificationCenter().postNotificationName(NotificationCenter.messagesDeleted, arrayList, -dialogId, false);
+                        if (dialogId == 0) {
+                            for (int b = 0, size2 = arrayList.size(); b < size2; b++) {
+                                Integer id = arrayList.get(b);
+                                MessageObject obj = dialogMessagesByIds.get(id);
                                 if (obj != null) {
-                                    for (int b = 0, size2 = arrayList.size(); b < size2; b++) {
-                                        if (obj.getId() == arrayList.get(b)) {
-                                            obj.deleted = true;
-                                            break;
+                                    if (BuildVars.LOGS_ENABLED) {
+                                        FileLog.d("mark messages " + obj.getId() + " deleted");
+                                    }
+                                    obj.deleted = true;
+                                    obj.messageOwner.deleted = true;
+                                }
+                            }
+                        } else {
+                            ArrayList<MessageObject> objs = dialogMessage.get(dialogId);
+                            if (objs != null) {
+                                for (int i = 0; i < objs.size(); ++i) {
+                                    MessageObject obj = objs.get(i);
+                                    if (obj != null) {
+                                        for (int b = 0, size2 = arrayList.size(); b < size2; b++) {
+                                            if (obj.getId() == arrayList.get(b)) {
+                                                obj.deleted = true;
+                                                obj.messageOwner.deleted = true;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -20188,20 +20377,28 @@ public class MessagesController extends BaseController implements NotificationCe
                 for (int a = 0, size = clearHistoryMessagesFinal.size(); a < size; a++) {
                     long key = clearHistoryMessagesFinal.keyAt(a);
                     int id = clearHistoryMessagesFinal.valueAt(a);
-                    long did = -key;
-                    getNotificationCenter().postNotificationName(NotificationCenter.historyCleared, did, id);
-                    ArrayList<MessageObject> objs = dialogMessage.get(did);
-                    if (objs != null) {
-                        for (int i = 0; i < objs.size(); ++i) {
-                            MessageObject obj = objs.get(i);
-                            if (obj != null && obj.getId() <= id) {
-                                obj.deleted = true;
-                                break;
+                    if (LeleConfig.keepDeletedMessages) {
+                        collectDeletedHistoryLocally(key, id, deletedReplacements);
+                    } else {
+                        long did = -key;
+                        getNotificationCenter().postNotificationName(NotificationCenter.historyCleared, did, id);
+                        ArrayList<MessageObject> objs = dialogMessage.get(did);
+                        if (objs != null) {
+                            for (int i = 0; i < objs.size(); ++i) {
+                                MessageObject obj = objs.get(i);
+                                if (obj != null && obj.getId() <= id) {
+                                    obj.deleted = true;
+                                    obj.messageOwner.deleted = true;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
                 getNotificationsController().removeDeletedHisoryFromNotifications(clearHistoryMessagesFinal);
+            }
+            if (LeleConfig.keepDeletedMessages) {
+                dispatchDeletedReplacements(deletedReplacements);
             }
             if (updateMask != 0) {
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, updateMask);
@@ -20250,8 +20447,12 @@ public class MessagesController extends BaseController implements NotificationCe
                 long key = deletedMessages.keyAt(a);
                 ArrayList<Integer> arrayList = deletedMessages.valueAt(a);
                 getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                    ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(key, arrayList, false, true, 0, 0);
-                    getMessagesStorage().updateDialogsWithDeletedMessages(key, -key, arrayList, dialogIds, false);
+                    if (LeleConfig.keepDeletedMessages) {
+                        getMessagesStorage().markMessagesAsLocalDeleted(key, arrayList, false);
+                    } else {
+                        ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(key, arrayList, false, true, 0, 0);
+                        getMessagesStorage().updateDialogsWithDeletedMessages(key, -key, arrayList, dialogIds, false);
+                    }
                 });
             }
         }
@@ -20278,8 +20479,12 @@ public class MessagesController extends BaseController implements NotificationCe
                 long key = clearHistoryMessages.keyAt(a);
                 int id = clearHistoryMessages.valueAt(a);
                 getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                    ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(key, id, false, true);
-                    getMessagesStorage().updateDialogsWithDeletedMessages(key, -key, new ArrayList<>(), dialogIds, false);
+                    if (LeleConfig.keepDeletedMessages) {
+                        getMessagesStorage().markHistoryAsLocalDeleted(key, id, false);
+                    } else {
+                        ArrayList<Long> dialogIds = getMessagesStorage().markMessagesAsDeleted(key, id, false, true);
+                        getMessagesStorage().updateDialogsWithDeletedMessages(key, -key, new ArrayList<>(), dialogIds, false);
+                    }
                 });
             }
         }
@@ -20780,6 +20985,9 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (res.peers.isEmpty()) {
                     result = null;
                 } else {
+                    if (!getUserConfig().isPremium()) {
+                        res.peers.removeIf((peer) -> peer.premium_required);
+                    }
                     result = res;
                     AndroidUtilities.runOnUIThread(() -> {
                         putUsers(res.users, false);
@@ -21411,7 +21619,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public String getRestrictionReason(ArrayList<TLRPC.RestrictionReason> reasons) {
-        if (reasons.isEmpty()) {
+        if (reasons.isEmpty() || LeleConfig.ignoreContentRestriction) {
             return null;
         }
         for (int a = 0, N = reasons.size(); a < N; a++) {
@@ -21701,13 +21909,13 @@ public class MessagesController extends BaseController implements NotificationCe
             reason = getRestrictionReason(chat.restriction_reason);
         } else {
             reason = getRestrictionReason(user.restriction_reason);
-            if (type != 3 && user.bot) {
+            /*if (type != 3 && user.bot) {
                 type = 1;
                 BaseFragment lastFragment = LaunchActivity.getLastFragment();
                 if (lastFragment.getLastStoryViewer() == null) {
                     closeLast = true;
                 }
-            }
+            }*/
         }
         boolean doNotCloseLast = false;
         BaseFragment lastFragment = LaunchActivity.getLastFragment();

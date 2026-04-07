@@ -170,8 +170,10 @@ public class ColoredImageSpan extends ReplacementSpan {
             }
             if (drawableColorIsPaintColor) {
                 drawable.setAlpha((int) (0xFF * alpha * (paint.getAlpha() / (float) Color.alpha(drawableColor))));
+            } else if (alpha != 1f || paint.getAlpha() != 0xFF) {
+                drawable.setAlpha((int) (alpha * paint.getAlpha()));
             } else {
-                drawable.setAlpha((int) (paint.getAlpha() * alpha));
+                drawable.setAlpha(255);
             }
             drawable.draw(canvas);
         }

@@ -619,6 +619,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 public void onSeekBarDrag(boolean stop, float progress) {
                     int fontSize = Math.round(startFontSize + (endFontSize - startFontSize) * progress);
                     if (fontSize != SharedConfig.ivFontSize) {
+                        sizeBar.getSeekBarAccessibilityDelegate().postAccessibilityEventRunnable(sizeBar);
                         SharedConfig.ivFontSize = fontSize;
                         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
                         SharedPreferences.Editor editor = preferences.edit();
@@ -1368,7 +1369,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
         builder.setTitle(formattedUrl);
         builder.setTitleMultipleLines(true);
-        builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Open), LocaleController.getString(R.string.Copy)}, (dialog, which) -> {
+        builder.setItems(new CharSequence[]{LocaleController.getString(R.string.Open), LocaleController.getString(R.string.ShareFile),  LocaleController.getString(R.string.Copy)}, (dialog, which) -> {
             if (parentActivity == null || pages[0].adapter.currentPage == null) {
                 return;
             }
@@ -1398,7 +1399,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                 }
                 Browser.openUrl(parentActivity, urlFinal);
-            } else if (which == 1) {
+            } else if (which == 1 || which == 2) {
                 String url = urlFinal;
                 if (url == null) return;
                 if (url.startsWith("mailto:")) {
@@ -1406,7 +1407,16 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 } else if (url.startsWith("tel:")) {
                     url = url.substring(4);
                 }
-                AndroidUtilities.addToClipboard(url);
+                if (which == 2) {
+                    AndroidUtilities.addToClipboard(url);
+                } else {
+                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                    shareIntent.setType("text/plain");
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, url);
+                    Intent chooserIntent = Intent.createChooser(shareIntent, LocaleController.getString(R.string.ShareFile));
+                    chooserIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ApplicationLoader.applicationContext.startActivity(chooserIntent);
+                }
             }
         });
         builder.setOnPreDismissListener(di -> links.clear());
@@ -4621,7 +4631,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
         textSelectionHelper = new TextSelectionHelper.ArticleTextSelectionHelper();
         textSelectionHelper.setParentView(pages[0].listView);
-        if (MessagesController.getInstance(currentAccount).getTranslateController().isContextTranslateEnabled()) {
+        /*if (MessagesController.getInstance(currentAccount).getTranslateController().isContextTranslateEnabled()) {
             textSelectionHelper.setOnTranslate((text, fromLang, toLang, onAlertDismiss) -> {
                 TranslateAlert2.showAlert(parentActivity, parentFragment, currentAccount, fromLang, toLang, text, null, false, null, onAlertDismiss);
 //                final TranslateAlert3 alert =
@@ -4630,7 +4640,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 //                alert.setOnDismissListener(onAlertDismiss);
 //                alert.show();
             });
-        }
+        }*/
         textSelectionHelper.layoutManager = pages[0].layoutManager;
         textSelectionHelper.setCallback(new TextSelectionHelper.Callback() {
             @Override

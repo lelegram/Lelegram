@@ -20,15 +20,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
-import android.graphics.ColorFilter;
 import android.graphics.Insets;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Region;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -75,6 +73,7 @@ import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.ViewPagerActivity;
 
 import java.util.ArrayList;
 
@@ -126,66 +125,13 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
     private boolean fullHeight;
     private int cellType;
     private Integer selectedPos;
-    protected SheetBackDrawable backDrawable = new SheetBackDrawable();
-
-    protected static class SheetBackDrawable extends Drawable {
-        private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        public SheetBackDrawable() {
-            bgPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-            bgPaint.setColor(0xFF000000);
-        }
-
-        public final Rect insets = new Rect();
-        public final Rect boundsWithInsets = new Rect();
-
-        public void setBackgroundInsets(int l, int t, int r, int b) {
-            if (insets.left != l || insets.top != t || insets.right != r || insets.bottom != b) {
-                insets.set(l, t, r, b);
-                onBoundsChange(getBounds());
-                invalidateSelf();
-            }
-        }
-
-        @Override
-        protected void onBoundsChange(@NonNull Rect bounds) {
-            super.onBoundsChange(bounds);
-            boundsWithInsets.set(bounds);
-            boundsWithInsets.left += Math.max(0, insets.left);
-            boundsWithInsets.top += Math.max(0, insets.top);
-            boundsWithInsets.right -= Math.max(0, insets.right);
-            boundsWithInsets.bottom -= Math.max(0, insets.bottom);
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            if (boundsWithInsets.isEmpty() || getAlpha() == 0) {
-                return;
-            }
-            canvas.drawRect(boundsWithInsets, bgPaint);
-        }
-
+    protected ColorDrawable backDrawable = new ColorDrawable(0xff000000) {
         @Override
         public void setAlpha(int alpha) {
-            bgPaint.setAlpha(alpha);
-            invalidateSelf();
+            super.setAlpha(alpha);
+            container.invalidate();
         }
-
-        @Override
-        public int getAlpha() {
-            return bgPaint.getAlpha();
-        }
-
-        @Override
-        public void setColorFilter(@Nullable ColorFilter colorFilter) {
-            bgPaint.setColorFilter(colorFilter);
-        }
-
-        @Override
-        public int getOpacity() {
-            return PixelFormat.UNKNOWN;
-        }
-    }
+    };
 
     protected boolean useLightStatusBar = true;
     protected boolean useLightNavBar;
@@ -1310,7 +1256,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
 
         if (useLightStatusBar && Build.VERSION.SDK_INT >= 23) {
             int color = Theme.getColor(Theme.key_actionBarDefault, null, true);
-            if (color == 0xffffffff) {
+            if (AndroidUtilities.computePerceivedBrightness(color) >= 0.721f) {
                 int flags = container.getSystemUiVisibility();
                 flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
                 container.setSystemUiVisibility(flags);
@@ -1467,7 +1413,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
         if (Build.VERSION.SDK_INT >= 23) {
             int color = Theme.getColor(Theme.key_actionBarDefault, null, true);
             int flags = container.getSystemUiVisibility();
-            if (useLightStatusBar && color == 0xffffffff) {
+            if (useLightStatusBar && AndroidUtilities.computePerceivedBrightness(color) >= 0.721f) {
                 flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             } else {
                 flags &=~ View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
@@ -1568,7 +1514,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
         }, delay);
     }
 
-    public Drawable getBackDrawable() {
+    public ColorDrawable getBackDrawable() {
         return backDrawable;
     }
 
@@ -1579,7 +1525,7 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
     public void setAllowDrawContent(boolean value) {
         if (allowDrawContent != value) {
             allowDrawContent = value;
-            container.setBackground(allowDrawContent ? backDrawable : null);
+            container.setBackgroundDrawable(allowDrawContent ? backDrawable : null);
             container.invalidate();
         }
     }

@@ -36,6 +36,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -75,6 +76,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.forward.ForwardContext;
+import com.fylnx.lelegram.forward.ForwardDrawable;
+import com.fylnx.lelegram.forward.ForwardItem;
 
 public class SearchViewPager extends ViewPagerFixed implements FilteredSearchView.UiCallback, NotificationCenter.NotificationCenterDelegate, IBlur3Capture {
 
@@ -123,13 +129,18 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     private final static String actionModeTag = "search_view_pager";
 
     public final static int gotoItemId = 200;
-    public final static int forwardItemId = 201;
+    public final static int forwardItemId = ForwardItem.ID_FORWARD;
+    public final static int forwardNoQuoteItemId = ForwardItem.ID_FORWARD_NOQUOTE;
+    public final static int forwardNoCaptionItemId = ForwardItem.ID_FORWARD_NOCAPTION;
     public final static int deleteItemId = 202;
     public final static int speedItemId = 203;
+    public final static int saveItemId = 204;
 
     private ActionBarMenuItem speedItem;
     private ActionBarMenuItem gotoItem;
     private ActionBarMenuItem forwardItem;
+    private ActionBarMenuItem forwardNoQuoteItem;
+    private ActionBarMenuItem saveItem;
     private ActionBarMenuItem deleteItem;
 
     private ActionBarMenu actionMode;
@@ -859,6 +870,8 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             speedItem.getIconView().setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon), PorterDuff.Mode.SRC_IN));
             gotoItem = actionMode.addItemWithWidth(gotoItemId, R.drawable.msg_message, AndroidUtilities.dp(54), getString(R.string.AccDescrGoToMessage));
             forwardItem = actionMode.addItemWithWidth(forwardItemId, R.drawable.msg_forward, AndroidUtilities.dp(54), getString(R.string.Forward));
+            forwardNoQuoteItem = actionMode.addItemWithWidth(forwardNoQuoteItemId, R.drawable.msg_forward, AndroidUtilities.dp(54), getString(R.string.NoQuoteForward));
+            saveItem = actionMode.addItemWithWidth(saveItemId, R.drawable.msg_download, AndroidUtilities.dp(54), getString(R.string.SaveToDownloads));
             deleteItem = actionMode.addItemWithWidth(deleteItemId, R.drawable.msg_delete, AndroidUtilities.dp(54), getString(R.string.Delete));
         }
         if (selectedMessagesCountTextView != null) {
@@ -879,6 +892,9 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             speedItem.setVisibility(isSpeedItemVisible() ? View.VISIBLE : View.GONE);
             gotoItem.setVisibility(View.VISIBLE);
             forwardItem.setVisibility(View.VISIBLE);
+            ForwardItem.setupForwardItem(forwardItem, ForwardItem.hasCaption(selectedFiles.values()), null, this::onActionBarItemClick);
+            forwardNoQuoteItem.setVisibility(LeleConfig.showNoQuoteForward ? View.VISIBLE : View.GONE);
+            forwardNoQuoteItem.setIcon(new ForwardDrawable(ForwardItem.ID_FORWARD_NOQUOTE, false));
             deleteItem.setVisibility(View.VISIBLE);
         } else {
             parent.getActionBar().hideActionMode();
@@ -905,7 +921,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     }
 
     private boolean isSpeedItemVisible() {
-        if (UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
+        if (true || UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
             return false;
         }
         for (MessageObject obj : selectedFiles.values()) {
@@ -956,18 +972,36 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
             MessageObject messageObject = selectedFiles.values().iterator().next();
             goToMessage(messageObject);
-        } else if (id == forwardItemId) {
+        } else if (id == saveItemId) {
+            ArrayList<MessageObject> messageObjects = new ArrayList<>(selectedFiles.values());
+            hideActionMode();
+            MediaController.saveFilesFromMessages(getContext(), AccountInstance.getInstance(currentAccount), messageObjects, (count) -> {
+                if (count > 0) {
+                    if (getContext() == null) {
+                        return;
+                    }
+                    BulletinFactory.of(fragmentView, null).createDownloadBulletin(BulletinFactory.FileType.UNKNOWNS, count, null).show();
+                }
+            });
+        } else if (id == forwardItemId || id == forwardNoQuoteItemId || id == forwardNoCaptionItemId) {
+            ForwardItem.setLastForwardOption(id);
+            ArrayList<MessageObject> fmessages = new ArrayList<>(selectedFiles.values());
+            ForwardContext forwardContext = () -> fmessages;
+            forwardContext.setForwardParams(id == forwardNoQuoteItemId, id == forwardNoQuoteItemId);
+            if (LeleConfig.quickForward) {
+                forwardContext.openShareAlert(parent, null, () -> {
+                    selectedFiles.clear();
+                    showActionMode(false);
+                });
+                return;
+            }
             Bundle args = new Bundle();
             args.putBoolean("onlySelect", true);
             args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
             DialogsActivity fragment = new DialogsActivity(args);
+            fragment.forwardContext = forwardContext;
+            var forwardParams = fragment.forwardContext.getForwardParams();
             fragment.setDelegate((fragment1, dids, message, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment) -> {
-                ArrayList<MessageObject> fmessages = new ArrayList<>();
-                Iterator<FilteredSearchView.MessageHashId> idIterator = selectedFiles.keySet().iterator();
-                while (idIterator.hasNext()) {
-                    FilteredSearchView.MessageHashId hashId = idIterator.next();
-                    fmessages.add(selectedFiles.get(hashId));
-                }
                 selectedFiles.clear();
 
                 showActionMode(false);
@@ -976,14 +1010,16 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                     for (int a = 0; a < dids.size(); a++) {
                         long did = dids.get(a).dialogId;
                         if (message != null) {
-                            AccountInstance.getInstance(currentAccount).getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(message.toString(), did, null, null, null, true, null, null, null, true, 0, 0, null, false));
+                            AccountInstance.getInstance(currentAccount).getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(message.toString(), did, null, null, null, true, null, null, null, forwardParams.notify, forwardParams.scheduleDate, 0, null, false));
                         }
-                        AccountInstance.getInstance(currentAccount).getSendMessagesHelper().sendMessage(fmessages, did, false,false, true, 0, 0);
+                        AccountInstance.getInstance(currentAccount).getSendMessagesHelper().sendMessage(fmessages, did, forwardParams.noQuote, forwardParams.noCaption, forwardParams.notify, forwardParams.scheduleDate, 0);
                     }
                     fragment1.finishFragment();
                 } else {
                     long did = dids.get(0).dialogId;
                     Bundle args1 = new Bundle();
+                    args1.putBoolean("forward_noquote", forwardParams.noQuote);
+                    args1.putBoolean("forward_nocaption", forwardParams.noCaption);
                     args1.putBoolean("scrollToTopOnResume", true);
                     if (DialogObject.isEncryptedDialog(did)) {
                         args1.putInt("enc_id", DialogObject.getEncryptedChatId(did));
@@ -1079,15 +1115,24 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                     }
                 }
             }
-            if (deleteItem != null) {
-                boolean canShowDelete = true;
-                Set<FilteredSearchView.MessageHashId> keySet = selectedFiles.keySet();
-                for (FilteredSearchView.MessageHashId key : keySet) {
-                    if (!selectedFiles.get(key).isDownloadingFile) {
-                        canShowDelete = false;
-                        break;
-                    }
+            boolean canShowDelete = true;
+            boolean canShowSave = true;
+            Set<FilteredSearchView.MessageHashId> keySet = selectedFiles.keySet();
+            for (FilteredSearchView.MessageHashId key : keySet) {
+                var messageObject = selectedFiles.get(key);
+                if (!messageObject.isDownloadingFile) {
+                    canShowDelete = false;
+                    canShowSave = false;
+                    break;
                 }
+                if (messageObject.getDocument() == null) {
+                    canShowSave = false;
+                }
+            }
+            if (saveItem != null) {
+                saveItem.setVisibility(canShowSave ? View.VISIBLE : View.GONE);
+            }
+            if (deleteItem != null) {
                 deleteItem.setVisibility(canShowDelete ? View.VISIBLE : View.GONE);
             }
         }
@@ -1425,7 +1470,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     }
 
     public void showDownloads() {
-        setPosition((expandedPublicPosts ? 1 : 0) + 5);
+        setPosition((expandedPublicPosts ? 1 : 0) + (UserConfig.getInstance(currentAccount).isPremium() ? 5 : 4));
     }
 
     public int getPositionForType(int initialSearchType) {
@@ -1497,7 +1542,9 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
             items.add(new Item(CHANNELS_TYPE));
             items.add(new Item(BOTS_TYPE));
-            items.add(new Item(POSTS_TYPE));
+            if (UserConfig.getInstance(currentAccount).isPremium()) {
+                items.add(new Item(POSTS_TYPE));
+            }
             if (!showOnlyDialogsAdapter) {
                 Item item = new Item(FILTER_TYPE);
                 item.filterIndex = 0;
@@ -1615,7 +1662,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             if (items.get(position).type == POSTS_TYPE) {
                 return 6;
             }
-            return items.get(position).type + position;
+            return 10 + position;
         }
 
         @Override

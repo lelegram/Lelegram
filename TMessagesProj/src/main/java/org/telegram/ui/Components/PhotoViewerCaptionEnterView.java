@@ -217,6 +217,7 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
                 invalidateForce();
             }
         };
+        messageEditText.setShowDisableMarkdown(true);
         messageEditText.setOnFocusChangeListener((view, focused) -> {
             if (focused) {
                 try {

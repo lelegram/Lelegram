@@ -106,6 +106,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.function.Consumer;
+
+import com.fylnx.lelegram.LeleConfig;
 import java.util.List;
 import java.util.Map;
 
@@ -435,6 +438,11 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
     }
 
     public static Quality getSavedQuality(ArrayList<Quality> qualities, MessageObject messageObject) {
+        if (LeleConfig.preferOriginalQuality) {
+            for (Quality q : qualities) {
+                if (q.original) return q;
+            }
+        }
         if (messageObject == null) return null;
         return getSavedQuality(qualities, messageObject.getDialogId(), messageObject.getId());
     }
@@ -952,7 +960,7 @@ public class VideoPlayer implements Player.Listener, VideoListener, AnalyticsLis
     public static VideoUri getQualityForPlayer(ArrayList<Quality> qualities) {
         for (final Quality q : qualities) {
             for (final VideoUri v : q.uris) {
-                if (v.original && v.isCached())
+                if (v.original && (v.isCached() || LeleConfig.preferOriginalQuality))
                     return v;
             }
         }

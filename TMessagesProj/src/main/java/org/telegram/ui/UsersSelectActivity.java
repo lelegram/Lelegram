@@ -60,6 +60,8 @@ import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -471,9 +473,18 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     finishFragment();
                 } else if (id == done_button) {
                     onDonePressed(true);
+                } else if (id == 2) {
+                    adapter.checkAllAdministrated();
                 }
             }
         });
+
+        if (type == TYPE_FILTER && isInclude) {
+            ActionBarMenu menu = actionBar.createMenu();
+            ActionBarMenuItem headerItem = menu.addItem(0, R.drawable.ic_ab_other);
+            headerItem.setContentDescription(LocaleController.getString("AccDescrMoreOptions", R.string.AccDescrMoreOptions));
+            headerItem.addSubItem(2, R.drawable.msg_admins, LocaleController.getString("CheckAllAdministrated", R.string.CheckAllAdministrated));
+        }
 
         fragmentView = new ViewGroup(context) {
             @Override
@@ -1143,6 +1154,31 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                 }
                 notifyDataSetChanged();
             });
+        }
+
+        public void checkAllAdministrated() {
+            for (Object object : contacts) {
+                if (object instanceof TLRPC.Chat) {
+                    TLRPC.Chat chat = (TLRPC.Chat) object;
+                    if (chat.creator || ChatObject.hasAdminRights(chat)) {
+                        if (selectedCount >= 100) {
+                            continue;
+                        }
+                        GroupCreateSpan span = new GroupCreateSpan(editText.getContext(), object);
+                        if (selectedContacts.indexOfKey(span.getUid()) >= 0) {
+                            continue;
+                        }
+                        spansContainer.addSpan(span, true);
+                        span.setOnClickListener(UsersSelectActivity.this);
+                    }
+                }
+            }
+            updateHint();
+            AndroidUtilities.hideKeyboard(editText);
+            if (editText.length() > 0) {
+                editText.setText(null);
+            }
+            checkVisibleRows();
         }
 
         public void setSearching(boolean value) {

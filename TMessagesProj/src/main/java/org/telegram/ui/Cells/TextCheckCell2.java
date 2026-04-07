@@ -215,6 +215,9 @@ public class TextCheckCell2 extends FrameLayout {
                 collapsedArrow.setAlpha(0.6f);
             }
         }
+        if (checkBoxClickArea != null) {
+            checkBoxClickArea.setEnabled(value);
+        }
     }
 
     public void setEnabled(boolean value, boolean animated) {
@@ -269,7 +272,7 @@ public class TextCheckCell2 extends FrameLayout {
     @Override
     public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
         super.onInitializeAccessibilityNodeInfo(info);
-        info.setClassName("android.widget.Switch");
+        info.setClassName("android.widget.CheckBox");
         info.setCheckable(true);
         info.setChecked(checkBox.isChecked());
     }

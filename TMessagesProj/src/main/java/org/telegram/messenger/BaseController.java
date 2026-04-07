@@ -3,6 +3,10 @@ package org.telegram.messenger;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
 
+import com.fylnx.lelegram.helpers.InlineBotHelper;
+import com.fylnx.lelegram.helpers.MessageHelper;
+import com.fylnx.lelegram.helpers.UserHelper;
+
 public class BaseController {
 
     protected final int currentAccount;
@@ -87,5 +91,17 @@ public class BaseController {
 
     protected final MemberRequestsController getMemberRequestsController() {
         return parentAccountInstance.getMemberRequestsController();
+    }
+
+    protected final MessageHelper getMessageHelper() {
+        return parentAccountInstance.getMessageHelper();
+    }
+
+    protected final UserHelper getUserHelper() {
+        return parentAccountInstance.getUserHelper();
+    }
+
+    protected final InlineBotHelper getInlineBotHelper() {
+        return parentAccountInstance.getInlineBotHelper();
     }
 }

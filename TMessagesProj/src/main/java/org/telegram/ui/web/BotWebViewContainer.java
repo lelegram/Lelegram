@@ -77,7 +77,6 @@ import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.util.Consumer;
 
-import org.checkerframework.common.subtyping.qual.Bottom;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -170,6 +169,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.fylnx.lelegram.Extra;
+import com.fylnx.lelegram.helpers.WebAppHelper;
 
 public abstract class BotWebViewContainer extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
     private final static String DURGER_KING_USERNAME = "DurgerKingBot";
@@ -1337,6 +1339,17 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         }
         d("onEventReceived " + eventType);
         switch (eventType) {
+            case "neko_event":
+            case "lele_event": {
+                if (Extra.isTrustedBot(botUser.id)) {
+                    WebAppHelper.processBotEvents(delegate, eventData, data -> {
+                        notifyEvent_fast(eventType, data);
+                        if (Objects.equals(eventType, "neko_event")) {
+                            notifyEvent_fast("lele_event", data);
+                        }
+                    });
+                }
+            }
             case "web_app_allow_scroll": {
                 boolean x = true, y = true;
                 try {
@@ -3463,6 +3476,7 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
     }
 
     public interface Delegate {
+        default void onGetTextToCopy(String json) {};
         /**
          * Called when WebView requests to close itself
          */

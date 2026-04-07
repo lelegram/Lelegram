@@ -678,7 +678,7 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         ttlRow = -1;
         ttlDivideRow = -1;
 
-        if (currentType == 0 && getMessagesController().qrLoginCamera) {
+        if (currentType == 0) {
             qrCodeRow = rowCount++;
             qrCodeDividerRow = rowCount++;
         }
@@ -968,6 +968,7 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
                     }
                 }
             });
+            imageView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             int[] colors = new int[8];
             colors[0] = 0x333333;
             colors[1] = Theme.getColor(Theme.key_windowBackgroundWhiteBlackText);

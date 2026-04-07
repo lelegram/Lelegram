@@ -2,10 +2,13 @@ package org.telegram.ui.Components;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import androidx.annotation.Nullable;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+
+import com.fylnx.lelegram.accessibility.AccConfig;
 
 public abstract class FloatSeekBarAccessibilityDelegate extends SeekBarAccessibilityDelegate {
 
@@ -60,6 +63,13 @@ public abstract class FloatSeekBarAccessibilityDelegate extends SeekBarAccessibi
         return getProgress() < getMaxValue();
     }
 
+    @Override
+    public void onInitializeAccessibilityEvent(View host, AccessibilityEvent event) {
+        super.onInitializeAccessibilityEvent(host, event);
+        if (AccConfig.showNumbersOfItems || event.getEventType() == AccessibilityEvent.TYPE_ANNOUNCEMENT) event.setItemCount((int)((getMaxValue() - getMinValue()) * 100));
+        if (AccConfig.showIndexOfItem || event.getEventType() == AccessibilityEvent.TYPE_ANNOUNCEMENT) event.setCurrentItemIndex((int) (getProgress() * 100));
+    }
+
     protected abstract float getProgress();
 
     protected abstract void setProgress(float progress);
@@ -73,6 +83,6 @@ public abstract class FloatSeekBarAccessibilityDelegate extends SeekBarAccessibi
     }
 
     protected float getDelta() {
-        return 0.05f;
+        return 0.01f;
     }
 }

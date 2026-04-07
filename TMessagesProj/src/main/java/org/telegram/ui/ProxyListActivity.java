@@ -45,6 +45,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.ProxyRotationController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -57,10 +58,12 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCheckCell;
+import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
 import org.telegram.ui.Components.RecyclerListView;
@@ -69,6 +72,8 @@ import org.telegram.ui.Components.SlideChooseView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import com.fylnx.lelegram.helpers.remote.ConfigHelper;
 
 public class ProxyListActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private final static boolean IS_PROXY_ROTATION_AVAILABLE = true;
@@ -79,6 +84,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private RecyclerListView listView;
     @SuppressWarnings("FieldCanBeLocal")
     private LinearLayoutManager layoutManager;
+
+    private final List<ConfigHelper.News> newsList = new ArrayList<>();
 
     private int currentConnectionState;
 
@@ -102,6 +109,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private int rotationTimeoutInfoRow;
     private int callsDetailRow;
     private int deleteAllRow;
+
+    private int newsShadowRow;
+    private int newsStartRow;
+    private int newsEndRow;
 
     private ItemTouchHelper itemTouchHelper;
     private NumberTextView selectedCountTextView;
@@ -492,6 +503,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     textCheckCell.setChecked(true);
                 }
                 ConnectionsManager.setProxySettings(useProxySettings, SharedConfig.currentProxy.address, SharedConfig.currentProxy.port, SharedConfig.currentProxy.username, SharedConfig.currentProxy.password, SharedConfig.currentProxy.secret);
+            } else if (position >= newsStartRow && position < newsEndRow) {
+                ConfigHelper.News news = newsList.get(position - newsStartRow);
+                Browser.openUrl(getParentActivity(), news.url);
             } else if (position == proxyAddRow) {
                 presentFragment(new ProxySettingsActivity());
             } else if (position == deleteAllRow) {
@@ -527,6 +541,20 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
             if (position >= proxyStartRow && position < proxyEndRow) {
                 listAdapter.toggleSelected(position);
                 return true;
+            }
+            if (position >= newsStartRow && position < newsEndRow) {
+                var news = newsList.get(position - newsStartRow);
+                if (news.id != null) {
+                    ItemOptions.makeOptions(this, view)
+                            .setScrimViewBackground(listView.getClipBackground(view))
+                            .add(R.drawable.msg_cancel, LocaleController.getString(R.string.Hide), () -> {
+                                ConfigHelper.removeNews(news.id);
+                                updateRows(true);
+                            })
+                            .setMinWidth(190)
+                            .show();
+                    return true;
+                }
             }
             return false;
         });
@@ -687,6 +715,18 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         }
         proxyAddRow = rowCount++;
         proxyShadowRow = rowCount++;
+        newsList.clear();
+        newsList.addAll(ConfigHelper.getNewsForProxy());
+        if (!newsList.isEmpty()) {
+            newsStartRow = rowCount;
+            rowCount += newsList.size();
+            newsEndRow = rowCount;
+            newsShadowRow = rowCount++;
+        } else {
+            newsStartRow = -1;
+            newsEndRow = -1;
+            newsShadowRow = -1;
+        }
         if (SharedConfig.currentProxy == null || SharedConfig.currentProxy.secret.isEmpty()) {
             boolean change = callsRow == -1;
             callsRow = rowCount++;
@@ -818,6 +858,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private class ListAdapter extends RecyclerListView.SelectionAdapter {
         private final static int VIEW_TYPE_SHADOW = 0,
             VIEW_TYPE_TEXT_SETTING = 1,
+            VIEW_TYPE_TEXT_DETAIL_SETTING = 100,
             VIEW_TYPE_HEADER = 2,
             VIEW_TYPE_TEXT_CHECK = 3,
             VIEW_TYPE_INFO = 4,
@@ -929,6 +970,13 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     cell.setSelectionEnabled(!selectedItems.isEmpty(), false);
                     break;
                 }
+                case VIEW_TYPE_TEXT_DETAIL_SETTING: {
+                    TextDetailSettingsCell textCell = (TextDetailSettingsCell) holder.itemView;
+                    textCell.setMultilineDetail(true);
+                    ConfigHelper.News news = newsList.get(position - newsStartRow);
+                    textCell.setTextAndValue(news.title, news.summary, position != newsEndRow - 1);
+                    break;
+                }
                 case VIEW_TYPE_SLIDE_CHOOSER: {
                     if (position == rotationTimeoutRow) {
                         SlideChooseView chooseView = (SlideChooseView) holder.itemView;
@@ -992,7 +1040,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
+            return position == useProxyRow || position == rotationRow || position == callsRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow || position >= newsStartRow && position < newsEndRow;
         }
 
         @Override
@@ -1005,6 +1053,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 case VIEW_TYPE_TEXT_SETTING:
                     view = new TextSettingsCell(mContext);
                     view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case VIEW_TYPE_TEXT_DETAIL_SETTING:
+                    view = new TextDetailSettingsCell(mContext);
                     break;
                 case VIEW_TYPE_HEADER:
                     view = new HeaderCell(mContext);
@@ -1056,6 +1107,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return -11;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return proxyList.get(position - proxyStartRow).hashCode();
+            } else if (position >= newsStartRow && position < newsEndRow) {
+                return newsList.get(position - newsStartRow).hashCode();
+            } else if (position == newsShadowRow) {
+                return -100;
             } else {
                 return -7;
             }
@@ -1063,7 +1118,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
 
         @Override
         public int getItemViewType(int position) {
-            if (position == useProxyShadowRow || position == proxyShadowRow) {
+            if (position == useProxyShadowRow || position == proxyShadowRow || position == newsShadowRow) {
                 return VIEW_TYPE_SHADOW;
             } else if (position == proxyAddRow || position == deleteAllRow) {
                 return VIEW_TYPE_TEXT_SETTING;
@@ -1075,6 +1130,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return VIEW_TYPE_SLIDE_CHOOSER;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return VIEW_TYPE_PROXY_DETAIL;
+            } else if (position >= newsStartRow && position < newsEndRow) {
+                return VIEW_TYPE_TEXT_DETAIL_SETTING;
             } else {
                 return VIEW_TYPE_INFO;
             }

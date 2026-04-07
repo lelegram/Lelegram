@@ -207,7 +207,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
     private ArrayList<AlertDialogCell> itemViews = new ArrayList<>();
     private float aspectRatio;
     private boolean dimEnabled = true;
-    private float dimAlpha = 0.5f;
+    private float dimAlpha = 0.32f;
     private boolean dimCustom = false;
     private final Theme.ResourcesProvider resourcesProvider;
     private boolean topAnimationAutoRepeat = true;
@@ -444,10 +444,10 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                 if (progressViewStyle == ALERT_TYPE_MESSAGE) {
                     layoutParams = (LayoutParams) contentScrollView.getLayoutParams();
 
-                    if (customView != null) {
+                    if (customView != null&& buttonsLayout != null) {
                         layoutParams.topMargin = titleTextView == null && messageTextView.getVisibility() == GONE && items == null ? dp(16) : 0;
                         layoutParams.bottomMargin = buttonsLayout == null ? dp(8) : 0;
-                    } else if (items != null) {
+                    } else if (items != null || customView != null) {
                         layoutParams.topMargin = titleTextView == null && messageTextView.getVisibility() == GONE ? dp(8) : 0;
                         layoutParams.bottomMargin = dp(8);
                     } else if (messageTextView.getVisibility() == VISIBLE) {

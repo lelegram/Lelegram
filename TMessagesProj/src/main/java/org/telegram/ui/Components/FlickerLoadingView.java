@@ -59,6 +59,8 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
     public static final int STAR_GIFT_SELECT = 35;
     public static final int STAR_GIFT_SHORTER = 36;
 
+    public static final int TEXT_SETTINGS_TYPE = 100;
+
     private int gradientWidth;
     private LinearGradient gradient;
     private Paint paint = new Paint();
@@ -789,6 +791,19 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
                     break;
                 }
             }
+        } else if (viewType == TEXT_SETTINGS_TYPE) {
+            int k = 0;
+            while (h <= getMeasuredHeight()) {
+                rectF.set(AndroidUtilities.dp(21), h + AndroidUtilities.dp(21), AndroidUtilities.dp(80), h + AndroidUtilities.dp(29));
+                checkRtl(rectF);
+                canvas.drawRoundRect(rectF, AndroidUtilities.dp(4), AndroidUtilities.dp(4), paint);
+
+                h += getCellHeight(getMeasuredWidth());
+                k++;
+                if (isSingleCell && k >= itemsCount) {
+                    break;
+                }
+            }
         } else if (getViewType() == SOTRY_VIEWS_USER_TYPE) {
             int k = 0;
             while (h <= getMeasuredHeight()) {
@@ -993,6 +1008,8 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
                 return dp(51);
             case CHECKBOX_TYPE:
                 return dp(50) + 1;
+            case TEXT_SETTINGS_TYPE:
+                return dp(50);
             case SOTRY_VIEWS_USER_TYPE:
                 return dp(58);
             case PROFILE_SEARCH_CELL:

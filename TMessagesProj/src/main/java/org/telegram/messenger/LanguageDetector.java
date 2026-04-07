@@ -1,5 +1,7 @@
 package org.telegram.messenger;
 
+import com.fylnx.lelegram.translator.Translator;
+
 public class LanguageDetector {
     public interface StringCallback {
         void run(String str);
@@ -25,7 +27,7 @@ public class LanguageDetector {
                 .identifyLanguage(text)
                 .addOnSuccessListener(str -> {
                     if (onSuccess != null) {
-                        onSuccess.run(str);
+                        onSuccess.run(Translator.stripLanguageCode(str));
                     }
                 })
                 .addOnFailureListener(e -> {

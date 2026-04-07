@@ -113,7 +113,7 @@ public class TextCell extends FrameLayout {
         valueTextView.setTextSize(dp(16));
         valueTextView.setGravity(LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT);
         valueTextView.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-        valueTextView.setTranslationY(dp(-2));
+        //valueTextView.setTranslationY(dp(-2));
         addView(valueTextView);
 
         valueSpoilersTextView = new SimpleTextView(context);
@@ -261,7 +261,7 @@ public class TextCell extends FrameLayout {
             textView.layout(viewLeft, viewTop, viewLeft + textView.getMeasuredWidth(), viewTop + textView.getMeasuredHeight());
         }
         if (imageView.getVisibility() == VISIBLE) {
-            viewTop = dp(heightDp > 50 ? 0 : 2) + (height - imageView.getMeasuredHeight()) / 2 - imageView.getPaddingTop();
+            viewTop = dp(heightDp > 50 ? 4 : 2) + (height - imageView.getMeasuredHeight()) / 2 - imageView.getPaddingTop();
             viewLeft = !LocaleController.isRTL ? dp(imageLeft) : width - imageView.getMeasuredWidth() - dp(imageLeft);
             imageView.layout(viewLeft, viewTop, viewLeft + imageView.getMeasuredWidth(), viewTop + imageView.getMeasuredHeight());
         }

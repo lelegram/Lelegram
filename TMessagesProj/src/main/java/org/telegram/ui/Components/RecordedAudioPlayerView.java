@@ -20,6 +20,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.Theme;
 
 import java.io.File;
@@ -70,6 +71,7 @@ public class RecordedAudioPlayerView extends View {
         this.right = right;
         this.wasPlaying = false;
 
+        setContentDescription(LocaleController.formatDuration((int) Math.round(Math.max(1, duration))));
         text.setText(AndroidUtilities.formatDuration((int) Math.round(Math.max(1, duration)), false), false);
         playPauseDrawable.setPause(false, false);
         if (player == null) {

@@ -67,6 +67,8 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+import com.fylnx.lelegram.LeleConfig;
+
 public class VoIPHelper {
 
 	public static long lastCallTime = 0;
@@ -74,6 +76,10 @@ public class VoIPHelper {
 	private static final int VOIP_SUPPORT_ID = 4244000;
 
 	public static void startCall(TLRPC.User user, boolean videoCall, boolean canVideoCall, final Activity activity, TLRPC.UserFull userFull, AccountInstance accountInstance) {
+		startCall(user, videoCall, canVideoCall, activity, userFull, accountInstance, false);
+	}
+
+	public static void startCall(TLRPC.User user, boolean videoCall, boolean canVideoCall, final Activity activity, TLRPC.UserFull userFull, AccountInstance accountInstance, boolean confirmed) {
 		if (accountInstance == null ? MessagesController.getInstance(UserConfig.selectedAccount).isFrozen() : accountInstance.getMessagesController().isFrozen()) {
 			AccountFrozenAlert.show(accountInstance == null ? UserConfig.selectedAccount : accountInstance.getCurrentAccount());
 			return;
@@ -98,6 +104,14 @@ public class VoIPHelper {
 				bldr.show();
 			} catch (Exception e) {
 				FileLog.e(e);
+			}
+			return;
+		}
+
+		if (LeleConfig.askBeforeCall && !confirmed && activity instanceof LaunchActivity) {
+			final BaseFragment lastFragment = ((LaunchActivity) activity).getActionBarLayout().getLastFragment();
+			if (lastFragment != null) {
+				AlertsCreator.createCallDialogAlert(lastFragment, lastFragment.getMessagesController().getUser(user.id), videoCall);
 			}
 			return;
 		}

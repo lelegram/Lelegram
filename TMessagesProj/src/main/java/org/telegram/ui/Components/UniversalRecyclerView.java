@@ -308,6 +308,16 @@ public class UniversalRecyclerView extends RecyclerListView {
         return -1;
     }
 
+    public int findPositionByItemSlug(String slug) {
+        for (int i = 0; i < adapter.getItemCount(); ++i) {
+            UItem item = adapter.getItem(i);
+            if (item != null && slug.equals(item.slug)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private class TouchHelperCallback extends ItemTouchHelper.Callback {
         @Override
         public boolean isLongPressDragEnabled() {

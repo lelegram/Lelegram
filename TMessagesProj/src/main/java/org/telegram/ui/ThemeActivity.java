@@ -38,6 +38,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -370,6 +371,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         }
 
         @Override
+        public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+            super.onInitializeAccessibilityEvent(event);
+            sizeBar.getSeekBarAccessibilityDelegate().onInitializeAccessibilityEvent(this, event);
+        }
+
+        @Override
         public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
             super.onInitializeAccessibilityNodeInfo(info);
             sizeBar.getSeekBarAccessibilityDelegate().onInitializeAccessibilityNodeInfoInternal(this, info);
@@ -440,6 +447,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         public void invalidate() {
             super.invalidate();
             sizeBar.invalidate();
+        }
+
+        @Override
+        public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+            super.onInitializeAccessibilityEvent(event);
+            sizeBar.getSeekBarAccessibilityDelegate().onInitializeAccessibilityEvent(this, event);
         }
 
         @Override
@@ -2164,17 +2177,10 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                             return;
                         }
                         Intent intent = new Intent(Intent.ACTION_SEND);
-                        intent.setType("text/xml");
-                        if (Build.VERSION.SDK_INT >= 24) {
-                            try {
-                                intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", finalFile));
-                                intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            } catch (Exception ignore) {
-                                intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(finalFile));
-                            }
-                        } else {
-                            intent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(finalFile));
-                        }
+                        var uri = FileProvider.getUriForFile(getParentActivity(), ApplicationLoader.getApplicationId() + ".provider", finalFile);
+                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        intent.putExtra(Intent.EXTRA_STREAM, uri);
+                        intent.setDataAndType(uri, "text/xml");
                         startActivityForResult(Intent.createChooser(intent, getString("ShareFile", R.string.ShareFile)), 500);
                     } catch (Exception e) {
                         FileLog.e(e);
@@ -2574,7 +2580,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     } else if (position == selectThemeHeaderRow) {
                         headerCell.setText(getString("SelectTheme", R.string.SelectTheme));
                     } else if (position == appIconHeaderRow) {
-                        headerCell.setText(getString(R.string.AppIcon));
+                        headerCell.setText(String.format("%s %s", getString(R.string.AppIcon), "@RKBDI"));
                     } else if (position == otherHeaderRow) {
                         headerCell.setText(getString("OtherSettings", R.string.OtherSettings));
                     } else if (position == mediaSoundHeaderRow) {

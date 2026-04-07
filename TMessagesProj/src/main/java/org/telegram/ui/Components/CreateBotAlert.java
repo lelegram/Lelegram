@@ -26,7 +26,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
@@ -99,7 +98,6 @@ public class CreateBotAlert {
         final AvatarDrawable avatarDrawable = new AvatarDrawable();
         avatarDrawable.setInfo(bot);
         imageView.setForUserOrChat(bot, avatarDrawable);
-        imageView.setRoundRadius(dp(40));
         layout.addView(imageView, LayoutHelper.createLinear(80, 80, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 22, 0, 16));
 
         final TextView titleTextView = new TextView(context);
@@ -196,7 +194,6 @@ public class CreateBotAlert {
         final boolean[] sent = new boolean[1];
 
         final String[] checkedUsername = new String[1];
-        final int[] creatingRequestId = new int[] { -1 };
 
         final String[] checking = new String[1];
         final int[] checkingRequestId = new int[] { -1 };
@@ -277,8 +274,7 @@ public class CreateBotAlert {
             req.username = checkedUsername[0];
             req.name = name;
             req.manager_id = MessagesController.getInstance(currentAccount).getInputUser(bot);
-            creatingRequestId[0] = ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (newBot, err) -> {
-                creatingRequestId[0] = -1;
+            ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (newBot, err) -> {
                 create.setLoading(false);
                 if (newBot != null) {
                     sent[0] = true;
@@ -325,11 +321,6 @@ public class CreateBotAlert {
                             )
                             .setDuration(8000)
                             .show();
-                    } else if (err.text != null && err.text.startsWith("FLOOD_WAIT_")) {
-                        final int seconds = Integer.parseInt(err.text.substring("FLOOD_WAIT_".length()));
-                        BulletinFactory.of(sheet.topBulletinContainer, resourcesProvider)
-                            .createSimpleBulletin(R.raw.error, getString(R.string.CreateManagedBotLimitTitle), formatString(R.string.CreateManagedBotLimitTextTime, LocaleController.formatDuration(seconds)))
-                            .show();
                     } else if ("MANAGER_PERMISSION_MISSING".equalsIgnoreCase(err.text)) {
                         String botName;
                         if (!TextUtils.isEmpty(UserObject.getPublicUsername(bot))) {
@@ -345,7 +336,7 @@ public class CreateBotAlert {
                     }
                     AndroidUtilities.hideKeyboard(sheet.getCurrentFocus());
                 }
-            }, ConnectionsManager.RequestFlagDoNotWaitFloodWait);
+            });
         };
         usernameEdit.editText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -381,11 +372,6 @@ public class CreateBotAlert {
                 if (onCreated != null) {
                     onCreated.run(null);
                 }
-            }
-
-            if (creatingRequestId[0] >= 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(creatingRequestId[0], true);
-                creatingRequestId[0] = -1;
             }
         });
 

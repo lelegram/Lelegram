@@ -8,6 +8,8 @@
 
 package org.telegram.messenger;
 
+import com.fylnx.lelegram.protection.ContentProtectionHelper;
+
 import android.text.TextUtils;
 import android.util.SparseArray;
 
@@ -29,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.fylnx.lelegram.LeleConfig;
 
 public class FileLoader extends BaseController {
 
@@ -1104,12 +1108,14 @@ public class FileLoader extends BaseController {
         if (metadata != null) {
             int flag;
             long dialogId = metadata.dialogId;
-            if (getMessagesController().isPeerNoForwards(dialogId) || DialogObject.isEncryptedDialog(dialogId)) {
+            if (parentObject instanceof MessageObject) {
+                messageObject = (MessageObject) parentObject;
+            }
+            if (DialogObject.isEncryptedDialog(dialogId) || ContentProtectionHelper.shouldBlockProtectedAction(getMessagesController(), dialogId, messageObject)) {
                 return false;
             }
             if (parentObject instanceof MessageObject) {
-                messageObject = (MessageObject) parentObject;
-                if (messageObject.isRoundVideo() || messageObject.isVoice() || messageObject.isAnyKindOfSticker() || messageObject.messageOwner.noforwards) {
+                if (messageObject.isRoundVideo() || messageObject.isVoice() || messageObject.isAnyKindOfSticker()) {
                     return false;
                 }
             } else {
@@ -1289,13 +1295,13 @@ public class FileLoader extends BaseController {
             }
         } else {
             if (MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaDocument) {
-                return getPathToAttach(MessageObject.getMedia(message).document, null, forceCache || MessageObject.getMedia(message).ttl_seconds != 0, useFileDatabaseQueue);
+                return getPathToAttach(MessageObject.getMedia(message).document, null, !LeleConfig.shouldNOTTrustMe && (forceCache || MessageObject.getMedia(message).ttl_seconds != 0), useFileDatabaseQueue);
             } else if (MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaPhoto) {
                 ArrayList<TLRPC.PhotoSize> sizes = MessageObject.getMedia(message).photo.sizes;
                 if (sizes.size() > 0) {
                     TLRPC.PhotoSize sizeFull = getClosestPhotoSizeWithSize(sizes, AndroidUtilities.getPhotoSize(true), false, null, true);
                     if (sizeFull != null) {
-                        return getPathToAttach(sizeFull, null, forceCache || MessageObject.getMedia(message).ttl_seconds != 0, useFileDatabaseQueue);
+                        return getPathToAttach(sizeFull, null, !LeleConfig.shouldNOTTrustMe && (forceCache || MessageObject.getMedia(message).ttl_seconds != 0), useFileDatabaseQueue);
                     }
                 }
             } else if (MessageObject.getMedia(message) instanceof TLRPC.TL_messageMediaWebPage) {
@@ -1502,6 +1508,9 @@ public class FileLoader extends BaseController {
     public static TLRPC.VideoSize getClosestVideoSizeWithSize(ArrayList<TLRPC.VideoSize> sizes, int side, boolean byMinSide, boolean ignoreStripped) {
         if (sizes == null || sizes.isEmpty()) {
             return null;
+        }
+        if (side > 160) {
+            side = 1080;
         }
         int lastSide = 0;
         TLRPC.VideoSize closestObject = null;

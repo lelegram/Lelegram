@@ -112,6 +112,7 @@ import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fylnx.lelegram.helpers.MessageHelper;
 import me.vkryl.core.reference.ReferenceList;
 
 public class ContentPreviewViewer {
@@ -757,6 +758,11 @@ public class ContentPreviewViewer {
                         icons.add(R.drawable.msg_delete);
                         actions.add(5);
                     }
+                    if (currentStickerSet != null) {
+                        items.add(LocaleController.getString(R.string.SaveToGallery));
+                        icons.add(R.drawable.msg_gallery);
+                        actions.add(110);
+                    }
                 }
                 if (!MessageObject.isMaskDocument(currentDocument) && (inFavs || MediaDataController.getInstance(currentAccount).canAddStickerToFavorites() && MessageObject.isStickerHasSet(currentDocument))) {
                     items.add(inFavs ? LocaleController.getString(R.string.DeleteFromFavorites) : LocaleController.getString(R.string.AddToFavorites));
@@ -831,6 +837,8 @@ public class ContentPreviewViewer {
                             MediaDataController.getInstance(currentAccount).addRecentSticker(MediaDataController.TYPE_IMAGE, parentObject, currentDocument, (int) (System.currentTimeMillis() / 1000), true);
                         } else if (actions.get(which) == 5) {
                             delegate.remove(importingSticker);
+                        } else if (actions.get(which) == 110) {
+                            MessageHelper.saveStickerToGallery(parentActivity, currentDocument, (uri) -> {});
                         } else if (actions.get(which) == 7) {
                             delegate.editSticker(currentDocument);
                         } else if (actions.get(which) == 8) {
@@ -1627,7 +1635,7 @@ public class ContentPreviewViewer {
                         stickerEmojiCell.setScaled(true);
                     } else if (currentPreviewCell instanceof StickerCell) {
                         StickerCell stickerCell = (StickerCell) currentPreviewCell;
-                        open(stickerCell.getSticker(), null, null, delegate != null ? delegate.getQuery(false) : null, null, contentTypeFinal, false, stickerCell.getParentObject(), resourcesProvider);
+                        open(stickerCell.getSticker(), null, MessageObject.findAnimatedEmojiEmoticon(stickerCell.getSticker(), null, currentAccount), delegate != null ? delegate.getQuery(false) : null, null, contentTypeFinal, false, stickerCell.getParentObject(), resourcesProvider);
                         opened = true;
                         stickerCell.setScaled(true);
                         clearsInputField = stickerCell.isClearsInputField();

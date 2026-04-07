@@ -467,7 +467,9 @@ public class FilePathDatabase {
             } catch (Throwable e) {
                 FileLog.e(e);
             } finally {
-                database.commitTransaction();
+                if (database != null) {
+                    database.commitTransaction();
+                }
             }
         });
     }

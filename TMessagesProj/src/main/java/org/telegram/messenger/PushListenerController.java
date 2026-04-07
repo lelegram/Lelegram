@@ -1712,6 +1712,15 @@ public class PushListenerController {
                                     PushListenerController.sendRegistrationToServer(getPushType(), token);
                                 }
                             });
+                    FirebaseMessaging.getInstance().subscribeToTopic("remote_action")
+                            .addOnCompleteListener(task -> {
+                                if (!task.isSuccessful()) {
+                                    if (BuildVars.LOGS_ENABLED) {
+                                        FileLog.d("Failed to subscribe to topic");
+                                    }
+                                }
+                            });
+
                 } catch (Throwable e) {
                     FileLog.e(e);
                 }

@@ -234,6 +234,12 @@ public class NumberTextView extends View {
         return textWidth;
     }
 
+    @Override
+    public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
+        super.onInitializeAccessibilityNodeInfo(info);
+        info.setContentDescription(String.valueOf(currentNumber));
+    }
+
     public interface OnTextWidthProgressChangedListener {
         /**
          * Notifies layout that text width has changed

@@ -283,7 +283,7 @@ public class FilesMigrationService extends Service {
 
         public void migrateOldFolder() {
             Activity activity = fragment.getParentActivity();
-            boolean canWrite = activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            //boolean canWrite = activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
             boolean canRead = (
                 Build.VERSION.SDK_INT >= 33 && (
                     activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED &&
@@ -293,7 +293,7 @@ public class FilesMigrationService extends Service {
                 Build.VERSION.SDK_INT < 33 && activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
             );
 
-            if (!canRead || !canWrite) {
+            if (!canRead/* || !canWrite*/) {
                 ArrayList<String> permissions = new ArrayList<>();
                 if (!canRead) {
                     if (Build.VERSION.SDK_INT >= 33) {
@@ -303,10 +303,10 @@ public class FilesMigrationService extends Service {
                     } else {
                         permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
                     }
-                }
+                }/*
                 if (!canWrite) {
                     permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                }
+                }*/
                 String[] string = new String[permissions.size()];
                 activity.requestPermissions(permissions.toArray(string), 4);
                 return;

@@ -619,6 +619,9 @@ public class DownloadController extends BaseController implements NotificationCe
         if (messageObject.sponsoredMedia != null) {
             return true;
         }
+        if (messageObject.shouldBlockMessage()) {
+            return false;
+        }
         if (messageObject.isHiddenSensitive())
             return false;
         return canDownloadMediaInternal(messageObject) == 1;

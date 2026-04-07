@@ -12,12 +12,11 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.assist.AssistContent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -57,17 +56,18 @@ import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.utils.DebugRecordingCanvas;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.DebugRecordingCanvasReplayFragment;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 
 import java.util.ArrayList;
+
+import com.fylnx.lelegram.helpers.MessageHelper;
+import com.fylnx.lelegram.helpers.UserHelper;
 
 public abstract class BaseFragment {
 
@@ -474,7 +474,7 @@ public abstract class BaseFragment {
         }
 
         if (hasForceLightStatusBar() && !AndroidUtilities.isTablet() && getParentLayout().getLastFragment() == this && getParentActivity() != null && !finishing) {
-            AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), Theme.getColor(Theme.key_actionBarDefault) == Color.WHITE);
+            AndroidUtilities.setLightStatusBar(getParentActivity().getWindow(), ColorUtils.calculateLuminance(Theme.getColor(Theme.key_actionBarDefault)) > 0.7f);
         }
 
         if (sheetsStack != null) {
@@ -923,6 +923,14 @@ public abstract class BaseFragment {
         return getAccountInstance().getUserConfig();
     }
 
+    public MessageHelper getMessageHelper() {
+        return getAccountInstance().getMessageHelper();
+    }
+
+    public UserHelper getUserHelper() {
+        return getAccountInstance().getUserHelper();
+    }
+
     public void setFragmentPanTranslationOffset(int offset) {
         if (parentLayout != null) {
             parentLayout.setFragmentPanTranslationOffset(offset);
@@ -1148,7 +1156,7 @@ public abstract class BaseFragment {
         if (getLastStoryViewer() != null && getLastStoryViewer().isShown()) {
             return false;
         }
-        if (hasForceLightStatusBar() && !Theme.getCurrentTheme().isDark()) {
+        if (hasForceLightStatusBar() && !Theme.getActiveTheme().isDark()) {
             return true;
         }
         Theme.ResourcesProvider resourcesProvider = getResourceProvider();
@@ -1163,6 +1171,10 @@ public abstract class BaseFragment {
             color = Theme.getColor(key, null, true);
         }
         return ColorUtils.calculateLuminance(color) > 0.7f;
+    }
+
+    public void onProvideAssistContent(AssistContent outContent) {
+
     }
 
     public void setPreviewOpenedProgress(float progress) {
@@ -1406,11 +1418,5 @@ public abstract class BaseFragment {
 
     public void onInsets(int left, int top, int right, int bottom) {
 
-    }
-
-
-
-    protected void dumpCanvas() {
-        AndroidUtilities.dumpCanvas(fragmentView);
     }
 }

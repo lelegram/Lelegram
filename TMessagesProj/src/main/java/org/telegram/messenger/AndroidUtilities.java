@@ -152,7 +152,6 @@ import com.google.android.gms.tasks.Task;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.utils.CustomHtml;
-import org.telegram.messenger.utils.DebugRecordingCanvas;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -184,7 +183,6 @@ import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
-import org.telegram.ui.DebugRecordingCanvasReplayFragment;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.PeerStoriesView;
 import org.telegram.ui.Stories.StoryMediaAreasView;
@@ -241,6 +239,8 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 import me.vkryl.core.BitwiseUtils;
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.TypefaceHelper;
 
 public class AndroidUtilities {
     public final static int LIGHT_STATUS_BAR_OVERLAY = 0x0f000000, DARK_STATUS_BAR_OVERLAY = 0x33000000;
@@ -300,7 +300,7 @@ public class AndroidUtilities {
     public static boolean incorrectDisplaySizeFix;
     public static Integer photoSize = null, highQualityPhotoSize = null;
     public static DisplayMetrics displayMetrics = new DisplayMetrics();
-    public static int leftBaseline;
+    public static int leftBaseline = 72;
     public static boolean usingHardwareInput;
     public static boolean isInMultiwindow;
 
@@ -390,7 +390,6 @@ public class AndroidUtilities {
     }
 
     static {
-        leftBaseline = isTablet() ? 80 : 72;
         checkDisplaySize(ApplicationLoader.applicationContext, null);
     }
 
@@ -1809,7 +1808,8 @@ public class AndroidUtilities {
     }
 
     public static boolean isMapsInstalled(BaseFragment fragment) {
-        String pkg = ApplicationLoader.getMapsProvider().getMapsAppPackageName();
+        return true;
+        /*String pkg = ApplicationLoader.getMapsProvider().getMapsAppPackageName();
         try {
             ApplicationLoader.applicationContext.getPackageManager().getApplicationInfo(pkg, 0);
             return true;
@@ -1830,7 +1830,7 @@ public class AndroidUtilities {
             builder.setNegativeButton(getString(R.string.Cancel), null);
             fragment.showDialog(builder.create());
             return false;
-        }
+        }*/
     }
 
     public static int[] toIntArray(List<Integer> integers) {
@@ -2404,20 +2404,53 @@ public class AndroidUtilities {
             if (!typefaceCache.containsKey(assetPath)) {
                 try {
                     Typeface t;
-                    if (Build.VERSION.SDK_INT >= 26) {
-                        Typeface.Builder builder = new Typeface.Builder(ApplicationLoader.applicationContext.getAssets(), assetPath);
-                        if (assetPath.contains("rextrabold")) {
-                            builder.setWeight(800);
-                        }
-                        if (assetPath.contains("medium") || assetPath.contains("rbold")) {
-                            builder.setWeight(700);
-                        }
-                        if (assetPath.contains("italic")) {
-                            builder.setItalic(true);
-                        }
-                        t = builder.build();
-                    } else {
-                        t = Typeface.createFromAsset(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                    switch (assetPath) {
+                        case TYPEFACE_ROBOTO_MEDIUM:
+                            if (TypefaceHelper.isMediumWeightSupported()) {
+                                t = TypefaceHelper.createTypeface(500, false);
+                            } else {
+                                t = Typeface.create("sans-serif", Typeface.BOLD);
+                            }
+                            break;
+                        case "fonts/ritalic.ttf":
+                            t = TypefaceHelper.createTypeface(400, true);
+                            break;
+                        case TYPEFACE_ROBOTO_MEDIUM_ITALIC:
+                            if (TypefaceHelper.isMediumWeightSupported()) {
+                                t = TypefaceHelper.createTypeface(500, true);
+                            } else {
+                                t = Typeface.create("sans-serif", Typeface.BOLD_ITALIC);
+                            }
+                            break;
+                        case TYPEFACE_ROBOTO_MONO:
+                            t = Typeface.MONOSPACE;
+                            break;
+                        case "fonts/rcondensedbold.ttf":
+                            t = Typeface.create("sans-serif-condensed", Typeface.BOLD);
+                            break;
+                        case TYPEFACE_ROBOTO_EXTRA_BOLD:
+                            if (TypefaceHelper.isMediumWeightSupported()) {
+                                t = TypefaceHelper.createTypeface(800, false);
+                            } else {
+                                t = Typeface.create("sans-serif", Typeface.BOLD);
+                            }
+                            break;
+                        default:
+                            if (Build.VERSION.SDK_INT >= 26) {
+                                Typeface.Builder builder = new Typeface.Builder(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                                if (assetPath.contains("rextrabold")) {
+                                    builder.setWeight(800);
+                                }
+                                if (assetPath.contains("medium") || assetPath.contains("rbold")) {
+                                    builder.setWeight(700);
+                                }
+                                if (assetPath.contains("italic")) {
+                                    builder.setItalic(true);
+                                }
+                                t = builder.build();
+                            } else {
+                                t = Typeface.createFromAsset(ApplicationLoader.applicationContext.getAssets(), assetPath);
+                            }
                     }
                     typefaceCache.put(assetPath, t);
                 } catch (Exception e) {
@@ -2953,12 +2986,16 @@ public class AndroidUtilities {
     }
 
     public static boolean isTabletForce() {
+        if (LeleConfig.tabletMode != LeleConfig.TABLET_AUTO) {
+            return LeleConfig.tabletMode == LeleConfig.TABLET_ENABLE;
+        }
         return ApplicationLoader.applicationContext != null && ApplicationLoader.applicationContext.getResources().getBoolean(R.bool.isTablet);
     }
 
     public static boolean isTabletInternal() {
         if (isTablet == null) {
             isTablet = isTabletForce();
+            leftBaseline = isTablet ? 80 : 72;
         }
         return isTablet;
     }
@@ -2980,7 +3017,7 @@ public class AndroidUtilities {
     }
 
     public static boolean isTablet() {
-        return isTabletInternal() && !SharedConfig.forceDisableTabletMode;
+        return isTabletInternal()/* && !SharedConfig.forceDisableTabletMode*/;
     }
 
     public static boolean isSmallScreen() {
@@ -3474,7 +3511,7 @@ public class AndroidUtilities {
             FileLog.d("wasInBackground = " + wasInBackground + " appLocked = " + SharedConfig.appLocked + " autoLockIn = " + SharedConfig.autoLockIn + " lastPauseTime = " + SharedConfig.lastPauseTime + " uptime = " + uptime);
         }
         return SharedConfig.passcodeHash.length() > 0 && wasInBackground &&
-                (SharedConfig.appLocked ||
+                (SharedConfig.appLocked || SharedConfig.autoLockIn == Integer.MAX_VALUE ||
                         SharedConfig.autoLockIn != 0 && SharedConfig.lastPauseTime != 0 && !SharedConfig.appLocked && (SharedConfig.lastPauseTime + SharedConfig.autoLockIn) <= uptime ||
                         uptime + 5 < SharedConfig.lastPauseTime);
     }
@@ -3599,7 +3636,7 @@ public class AndroidUtilities {
     }
 
     public static boolean shouldShowClipboardToast() {
-        return (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !OneUIUtilities.hasBuiltInClipboardToasts()) && Build.VERSION.SDK_INT < 32;
+        return (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !OneUIUtilities.hasBuiltInClipboardToasts()) && (Build.VERSION.SDK_INT < 32 || XiaomiUtilities.isMIUI());
     }
 
     public static boolean addToClipboard(CharSequence str) {
@@ -3659,7 +3696,7 @@ public class AndroidUtilities {
         }
         File storageDir = null;
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Telegram");
+            storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Lelegram");
             if (!storageDir.mkdirs()) {
                 if (!storageDir.exists()) {
                     if (BuildVars.LOGS_ENABLED) {
@@ -4216,20 +4253,20 @@ public class AndroidUtilities {
                             }
                         }
                     }
-                    if (Build.VERSION.SDK_INT >= 24) {
+                    //if (Build.VERSION.SDK_INT >= 24) {
                         intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), realMimeType != null ? realMimeType : "text/plain");
-                    } else {
-                        intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
-                    }
+                    //} else {
+                    //    intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
+                    //}
                     if (realMimeType != null) {
                         try {
                             activity.startActivityForResult(intent, 500);
                         } catch (Exception e) {
-                            if (Build.VERSION.SDK_INT >= 24) {
+                            //if (Build.VERSION.SDK_INT >= 24) {
                                 intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "text/plain");
-                            } else {
-                                intent.setDataAndType(Uri.fromFile(f), "text/plain");
-                            }
+                            //} else {
+                            //    intent.setDataAndType(Uri.fromFile(f), "text/plain");
+                            //}
                             activity.startActivityForResult(intent, 500);
                         }
                     } else {
@@ -4279,25 +4316,21 @@ public class AndroidUtilities {
             }
             if (realMimeType != null && realMimeType.equals("application/vnd.android.package-archive")) {
                 if (restrict) return true;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ApplicationLoader.applicationContext.getPackageManager().canRequestPackageInstalls()) {
-                    AlertsCreator.createApkRestrictedDialog(activity, resourcesProvider).show();
-                    return true;
-                }
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), realMimeType != null ? realMimeType : "text/plain");
-            } else {
-                intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
-            }
+            //} else {
+            //    intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
+            //}
             if (realMimeType != null) {
                 try {
                     activity.startActivityForResult(intent, 500);
                 } catch (Exception e) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "text/plain");
-                    } else {
-                        intent.setDataAndType(Uri.fromFile(f), "text/plain");
-                    }
+                    //} else {
+                    //    intent.setDataAndType(Uri.fromFile(f), "text/plain");
+                    //}
                     activity.startActivityForResult(intent, 500);
                 }
             } else {
@@ -4446,20 +4479,20 @@ public class AndroidUtilities {
                     }
                 }
             }
-            if (Build.VERSION.SDK_INT >= 24) {
+            //if (Build.VERSION.SDK_INT >= 24) {
                 intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), realMimeType != null ? realMimeType : "text/plain");
-            } else {
-                intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
-            }
+            //} else {
+            //    intent.setDataAndType(Uri.fromFile(f), realMimeType != null ? realMimeType : "text/plain");
+            //}
             if (realMimeType != null) {
                 try {
                     activity.startActivityForResult(intent, 500);
                 } catch (Exception e) {
-                    if (Build.VERSION.SDK_INT >= 24) {
+                    //if (Build.VERSION.SDK_INT >= 24) {
                         intent.setDataAndType(FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", f), "text/plain");
-                    } else {
-                        intent.setDataAndType(Uri.fromFile(f), "text/plain");
-                    }
+                    //} else {
+                    //    intent.setDataAndType(Uri.fromFile(f), "text/plain");
+                    //}
                     activity.startActivityForResult(intent, 500);
                 }
             } else {
@@ -6676,26 +6709,14 @@ public class AndroidUtilities {
         return false;
     }
 
+    public static String getVersionNameWithBuildTime() {
+        return String.format(Locale.US, "%s (%d) %s", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, BuildConfig.BUILD_TIME_UTC);
+    }
+
     public static String getBuildVersionInfo() {
         try {
-            PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
-            int code = pInfo.versionCode / 10;
-            String abi = "";
-            switch (pInfo.versionCode % 10) {
-                case 1:
-                case 2:
-                    abi = "store bundled " + Build.CPU_ABI + " " + Build.CPU_ABI2;
-                    break;
-                default:
-                case 9:
-                    if (ApplicationLoader.isStandaloneBuild()) {
-                        abi = "direct " + Build.CPU_ABI + " " + Build.CPU_ABI2;
-                    } else {
-                        abi = "universal " + Build.CPU_ABI + " " + Build.CPU_ABI2;
-                    }
-                    break;
-            }
-            return formatString("TelegramVersion", R.string.TelegramVersion, String.format(Locale.US, "v%s (%d) %s", pInfo.versionName, code, abi));
+            String abi = BuildConfig.BUILD_TYPE + " " + Build.SUPPORTED_ABIS[0];
+            return formatString(R.string.LelegramVersion, String.format(Locale.US, "v%s %s", getVersionNameWithBuildTime(), abi), String.format(Locale.US, "v%s (%d)", BuildVars.BUILD_VERSION_STRING, BuildConfig.BUILD_VERSION), "@Duang");
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -6751,7 +6772,7 @@ public class AndroidUtilities {
     }
 
     public static void logFlagSecure() {
-        if (!BuildConfig.DEBUG_VERSION) {
+        if (!BuildConfig.DEBUG) {
             return;
         }
 
@@ -6992,19 +7013,6 @@ public class AndroidUtilities {
         } catch (Throwable e) {
             FileLog.e(e);
         }
-    }
-
-    public static void dumpCanvas(View v) {
-        if (!BuildConfig.DEBUG_PRIVATE_VERSION) {
-            return;
-        }
-
-        final Bitmap b = Bitmap.createBitmap(v.getWidth(), v.getHeight(), Bitmap.Config.ARGB_8888);
-        final DebugRecordingCanvas c = new DebugRecordingCanvas(b);
-        v.draw(c);
-        c.logCommands();
-
-        LaunchActivity.instance.presentFragment(new DebugRecordingCanvasReplayFragment(c));
     }
 
     public static <A, B> B find(ArrayList<A> array, Class<B> clazz) {

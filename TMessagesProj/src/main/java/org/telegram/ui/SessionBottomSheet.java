@@ -66,6 +66,7 @@ public class SessionBottomSheet extends BottomSheet {
             }
         });
         imageView.setScaleType(ImageView.ScaleType.CENTER);
+        imageView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         linearLayout.addView(imageView, LayoutHelper.createLinear(70, 70, Gravity.CENTER_HORIZONTAL, 0, 16, 0, 0));
 
         TextView nameView = new TextView(context);
@@ -365,6 +366,11 @@ public class SessionBottomSheet extends BottomSheet {
             iconId = R.raw.mac_30;
             colorKey = Theme.key_avatar_backgroundCyan;
             colorKey2 = Theme.key_avatar_background2Cyan;
+        } else if (session.app_name.contains("Lelegram")) {
+            animation = false;
+            iconId = R.drawable.notification;
+            colorKey = Theme.key_avatar_backgroundBlue;
+            colorKey2 = Theme.key_avatar_background2Blue;
         } else if (platform.contains("android")) {
             iconId = R.raw.android_30;
             colorKey = Theme.key_avatar_backgroundGreen;

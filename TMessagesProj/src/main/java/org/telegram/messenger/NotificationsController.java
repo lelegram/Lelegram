@@ -97,6 +97,10 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.MessageFilterHelper;
+import com.fylnx.lelegram.helpers.PasscodeHelper;
+
 public class NotificationsController extends BaseController {
 
     public static final String EXTRA_VOICE_REPLY = "extra_voice_reply";
@@ -1067,6 +1071,9 @@ public class NotificationsController extends BaseController {
                     if (BuildVars.LOGS_ENABLED) {
                         FileLog.d("skipped message because 1");
                     }
+                    continue;
+                }
+                if (messageObject.shouldBlockMessage()) {
                     continue;
                 }
                 if (messageObject.isStoryPush) {
@@ -2445,9 +2452,10 @@ public class NotificationsController extends BaseController {
         if (messageObject != null && messageObject.didSpoilLoginCode()) {
             return stringBuilder.toString();
         }
-        for (int i = 0; i < messageObject.messageOwner.entities.size(); i++) {
-            if (messageObject.messageOwner.entities.get(i) instanceof TLRPC.TL_messageEntitySpoiler) {
-                TLRPC.TL_messageEntitySpoiler spoiler = (TLRPC.TL_messageEntitySpoiler) messageObject.messageOwner.entities.get(i);
+        var entities = MessageFilterHelper.checkBlockedEntities(messageObject);
+        for (int i = 0; i < entities.size(); i++) {
+            if (entities.get(i) instanceof TLRPC.TL_messageEntitySpoiler) {
+                TLRPC.TL_messageEntitySpoiler spoiler = (TLRPC.TL_messageEntitySpoiler) entities.get(i);
                 for (int j = 0; j < spoiler.length; j++) {
                     stringBuilder.setCharAt(spoiler.offset + j, spoilerChars[j % spoilerChars.length]);
                 }
@@ -3588,12 +3596,12 @@ public class NotificationsController extends BaseController {
             intent.putExtra("currentAccount", currentAccount);
 
             IconCompat icon;
-            if (avatar != null) {
-                icon = IconCompat.createWithAdaptiveBitmap(avatar);
+            if (person != null && person.getIcon() != null) {
+                icon = person.getIcon();
             } else if (user != null) {
-                icon = IconCompat.createWithResource(ApplicationLoader.applicationContext, user.bot ? R.drawable.book_bot : R.drawable.book_user);
+                icon = IconCompat.createWithResource(ApplicationLoader.applicationContext, user.bot ? R.drawable.book_bot_adaptvie : R.drawable.book_user_adaptvie);
             } else {
-                icon = IconCompat.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_group);
+                icon = IconCompat.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_group_adaptvie);
             }
             if (supportsBubble) {
                 NotificationCompat.BubbleMetadata.Builder bubbleBuilder =
@@ -4049,7 +4057,7 @@ public class NotificationsController extends BaseController {
     }
 
     private void showOrUpdateNotification(boolean notifyAboutLast) {
-        if (!getUserConfig().isClientActivated() || pushMessages.isEmpty() && storyPushMessages.isEmpty() || !SharedConfig.showNotificationsForAllAccounts && currentAccount != UserConfig.selectedAccount) {
+        if (!getUserConfig().isClientActivated() || pushMessages.isEmpty() && storyPushMessages.isEmpty() || PasscodeHelper.isAccountHidden(currentAccount) || !SharedConfig.showNotificationsForAllAccounts && currentAccount != UserConfig.selectedAccount) {
             dismissNotification();
             return;
         }
@@ -4304,6 +4312,10 @@ public class NotificationsController extends BaseController {
                 notifyDisabled = true;
             }
 
+            if (LeleConfig.silenceNonContacts && chat == null && getContactsController().contactsDict.get(userId) == null) {
+                notifyDisabled = true;
+            }
+
             if (!notifyDisabled && dialog_id == override_dialog_id && chat != null) {
                 int notifyMaxCount;
                 int notifyDelay;
@@ -4541,7 +4553,7 @@ public class NotificationsController extends BaseController {
                     .setGroupSummary(true)
                     .setShowWhen(true)
                     .setWhen(((long) lastMessageObject.messageOwner.date) * 1000)
-                    .setColor(0xff11acfa);
+                    .setColor(LeleConfig.getNotificationColor());
 
             long[] vibrationPattern = null;
             Uri sound = null;
@@ -5091,7 +5103,7 @@ public class NotificationsController extends BaseController {
                 replyIntent.putExtra("topic_id", topicId);
                 replyIntent.putExtra("currentAccount", currentAccount);
                 PendingIntent replyPendingIntent = PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, replyIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-                RemoteInput remoteInputWear = new RemoteInput.Builder(EXTRA_VOICE_REPLY).setLabel(LocaleController.getString(R.string.Reply)).build();
+                RemoteInput remoteInputWear = new RemoteInput.Builder(EXTRA_VOICE_REPLY).setAllowDataType("image/*", true).setLabel(LocaleController.getString(R.string.Reply)).build();
                 String replyToString;
                 if (DialogObject.isChatDialog(dialogId)) {
                     replyToString = LocaleController.formatString(R.string.ReplyToGroup, name);
@@ -5515,7 +5527,7 @@ public class NotificationsController extends BaseController {
                     .setContentText(text.toString())
                     .setAutoCancel(true)
                     .setNumber(dialogKey.story ? storyPushMessages.size() : messageObjects.size())
-                    .setColor(0xff11acfa)
+                    .setColor(LeleConfig.getNotificationColor())
                     .setGroupSummary(false)
                     .setWhen(date)
                     .setShowWhen(true)
@@ -5739,27 +5751,16 @@ public class NotificationsController extends BaseController {
 
     public static Person.Builder loadRoundAvatar(long dialogId, File avatar, Person.Builder personBuilder) {
         if (dialogId == UserObject.OAUTH) {
-            personBuilder.setIcon(IconCompat.createWithResource(ApplicationLoader.applicationContext, R.drawable.ic_launcher_dr));
+            personBuilder.setIcon(IconCompat.createWithResource(ApplicationLoader.applicationContext, R.mipmap.ic_launcher));
             return personBuilder;
         }
         if (avatar != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                Bitmap bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(avatar), (decoder, info, src) -> {
-                    decoder.setPostProcessor((canvas) -> {
-                        Path path = new Path();
-                        path.setFillType(Path.FillType.INVERSE_EVEN_ODD);
-                        int width = canvas.getWidth();
-                        int height = canvas.getHeight();
-                        path.addRoundRect(0, 0, width, height, width / 2, width / 2, Path.Direction.CW);
-                        Paint paint = new Paint();
-                        paint.setAntiAlias(true);
-                        paint.setColor(Color.TRANSPARENT);
-                        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-                        canvas.drawPath(path, paint);
-                        return PixelFormat.TRANSLUCENT;
-                    });
-                });
-                IconCompat icon = IconCompat.createWithBitmap(bitmap);
+                Bitmap bitmap = BitmapFactory.decodeFile(avatar.getAbsolutePath());
+                if (bitmap == null) {
+                    return personBuilder;
+                }
+                IconCompat icon = IconCompat.createWithAdaptiveBitmap(MediaDataController.convertBitmapToAdaptive(bitmap));
                 personBuilder.setIcon(icon);
             } catch (Throwable ignore) {
 

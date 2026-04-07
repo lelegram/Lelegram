@@ -1,0 +1,25 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.so binary
+*.dll binary
+*.jar binary
+*.aar binary
+*.zip binary
+*.7z binary
+*.keystore binary
+*.jks binary

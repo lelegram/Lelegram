@@ -169,6 +169,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import com.fylnx.lelegram.Extra;
+import com.fylnx.lelegram.helpers.PasscodeHelper;
 import me.vkryl.core.BitwiseUtils;
 
 public class AlertsCreator {
@@ -714,6 +716,13 @@ public class AlertsCreator {
                         localeInfo.shortName = language.lang_code;
                         localeInfo.baseLangCode = language.base_lang_code;
                         localeInfo.pluralLangCode = language.plural_code;
+                        if (localeInfo.shortName.equals("duang_zh_hans")) {
+                            localeInfo.pluralLangCode = "zh_dg";
+                        } else if (localeInfo.shortName.startsWith("zh_hans") || (localeInfo.baseLangCode != null && localeInfo.baseLangCode.startsWith("zh_hans"))) {
+                            localeInfo.pluralLangCode = "zh_cn";
+                        } else if (localeInfo.shortName.startsWith("zh_hant") || (localeInfo.baseLangCode != null && localeInfo.baseLangCode.startsWith("zh_hant"))) {
+                            localeInfo.pluralLangCode = "zh_tw";
+                        }
                         localeInfo.isRtl = language.rtl;
                         if (language.official) {
                             localeInfo.pathToFile = "remote";
@@ -1479,6 +1488,10 @@ public class AlertsCreator {
             builder.setMessageTextViewClickable(false);
             builder.setPositiveButton(LocaleController.getString(R.string.Open), (dialogInterface, i) -> open.run());
             builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+            builder.setNeutralButton(LocaleController.getString(R.string.Copy), (dialogInterface, i) -> {
+                AndroidUtilities.addToClipboard(url);
+                BulletinFactory.of(fragment).createCopyLinkBulletin().show();
+            });
             fragment.showDialog(dialog[0] = builder.create());
         }
     }
@@ -1728,6 +1741,10 @@ public class AlertsCreator {
     }
 
     public static void createBotLaunchAlert(BaseFragment fragment, TLRPC.User user, Runnable onConfirm, Runnable onDismiss) {
+        if (Extra.isTrustedBot(user.id)) {
+            onConfirm.run();
+            return;
+        }
         Context context = fragment.getContext();
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
@@ -1838,6 +1855,13 @@ public class AlertsCreator {
 
     public static void createBotLaunchAlert(BaseFragment fragment, AtomicBoolean allowWrite, TLRPC.User user, Runnable loadBotSheet) {
         if (fragment == null) {
+            return;
+        }
+        if (Extra.isTrustedBot(user.id)) {
+            if (allowWrite != null) {
+                allowWrite.set(true);
+            }
+            loadBotSheet.run();
             return;
         }
         Context context = fragment.getContext();
@@ -2364,9 +2388,11 @@ public class AlertsCreator {
                     cell[0].setText(getString(R.string.DeleteGroupForAll), "", false, false);
                 }
             } else if (clear) {
-                cell[0].setText(LocaleController.formatString(R.string.ClearHistoryOptionAlso, UserObject.getFirstName(user)), "", false, false);
+                deleteForAll[0] = true;
+                cell[0].setText(LocaleController.formatString(R.string.ClearHistoryOptionAlso, UserObject.getFirstName(user)), "", true, false);
             } else {
-                cell[0].setText(LocaleController.formatString(R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", false, false);
+                deleteForAll[0] = true;
+                cell[0].setText(LocaleController.formatString(R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", true, false);
             }
             cell[0].setMultiline(true);
             cell[0].setPadding(LocaleController.isRTL ? dp(16) : dp(8), dp(10), LocaleController.isRTL ? dp(8) : dp(16), dp(10));
@@ -2861,7 +2887,7 @@ public class AlertsCreator {
             }
         };
         NotificationCenter.listenEmojiLoading(messageTextView);
-        messageTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        messageTextView.setTextColor(fragment.getThemedColor(Theme.key_dialogTextBlack));
         messageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         messageTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
         messageTextView.setText(replaceTags(message));
@@ -2877,7 +2903,7 @@ public class AlertsCreator {
         frameLayout.addView(imageView, LayoutHelper.createFrame(40, 40, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 22, 5, 22, 0));
 
         TextView textView = new TextView(context);
-        textView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem));
+        textView.setTextColor(fragment.getThemedColor(Theme.key_actionBarDefaultSubmenuItem));
         textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
         textView.setTypeface(AndroidUtilities.bold());
         textView.setLines(1);
@@ -2889,10 +2915,10 @@ public class AlertsCreator {
         frameLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, (LocaleController.isRTL ? 21 : 76), 11, (LocaleController.isRTL ? 76 : 21), 0));
         frameLayout.addView(messageTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, 24, 57, 24, 9));
 
-        AlertDialog dialog = new AlertDialog.Builder(context).setView(frameLayout)
+        AlertDialog dialog = new AlertDialog.Builder(context, fragment.getResourceProvider()).setView(frameLayout)
                 .setPositiveButton(LocaleController.getString(R.string.Call), (dialogInterface, i) -> {
                     final TLRPC.UserFull userFull = fragment.getMessagesController().getUserFull(user.id);
-                    VoIPHelper.startCall(user, videoCall, userFull != null && userFull.video_calls_available, fragment.getParentActivity(), userFull, fragment.getAccountInstance());
+                    VoIPHelper.startCall(user, videoCall, userFull != null && userFull.video_calls_available, fragment.getParentActivity(), userFull, fragment.getAccountInstance(), true);
                 })
                 .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
                 .create();
@@ -2914,7 +2940,7 @@ public class AlertsCreator {
         }
 
         NumberTextView checkTextView = new NumberTextView(context);
-        EditText editTextView = new EditText(context);
+        EditText editTextView = new EditTextBoldCursor(context);
         editTextView.setTextColor(Theme.getColor(Theme.key_voipgroup_actionBarItems));
         editTextView.setHint(peerId > 0 ? LocaleController.getString(R.string.UserBio) : LocaleController.getString(R.string.DescriptionPlaceholder));
         editTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
@@ -3059,7 +3085,7 @@ public class AlertsCreator {
         LinearLayout dialogView = new LinearLayout(context);
         dialogView.setOrientation(LinearLayout.VERTICAL);
 
-        EditText firstNameEditTextView = new EditText(context);
+        EditText firstNameEditTextView = new EditTextBoldCursor(context);
         firstNameEditTextView.setTextColor(Theme.getColor(Theme.key_voipgroup_actionBarItems));
         firstNameEditTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
         firstNameEditTextView.setMaxLines(1);
@@ -3075,7 +3101,7 @@ public class AlertsCreator {
 
         EditText lastNameEditTextView = null;
         if (peerId > 0) {
-            lastNameEditTextView = new EditText(context);
+            lastNameEditTextView = new EditTextBoldCursor(context);
             lastNameEditTextView.setTextColor(Theme.getColor(Theme.key_voipgroup_actionBarItems));
             lastNameEditTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
             lastNameEditTextView.setMaxLines(1);
@@ -3358,7 +3384,7 @@ public class AlertsCreator {
             builder.setMessage(replaceTags(LocaleController.formatString("BlockUsersMessage", R.string.BlockUsersMessage, LocaleController.formatPluralString("UsersCount", count))));
         }
 
-        final boolean[] checks = new boolean[]{true, true};
+        final boolean[] checks = new boolean[]{true, reportSpam};
 
         for (int a = 0; a < cell.length; a++) {
             if (a == 0 && !reportSpam) {
@@ -3370,7 +3396,7 @@ public class AlertsCreator {
             if (a == 0) {
                 cell[a].setText(LocaleController.getString(R.string.ReportSpamTitle), "", true, false);
             } else {
-                cell[a].setText(count == 1 ? LocaleController.getString(R.string.DeleteThisChatBothSides) : LocaleController.getString(R.string.DeleteTheseChatsBothSides), "", true, false);
+                cell[a].setText(count == 1 ? LocaleController.getString(R.string.DeleteThisChatBothSides) : LocaleController.getString(R.string.DeleteTheseChatsBothSides), "", reportSpam, false);
             }
             cell[a].setPadding(LocaleController.isRTL ? dp(16) : dp(8), 0, LocaleController.isRTL ? dp(8) : dp(16), 0);
             linearLayout.addView(cell[a], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
@@ -4246,7 +4272,7 @@ public class AlertsCreator {
         final FrameLayout repeatContainer;
         final TextView repeatTextView;
         final Runnable updateRepeatText;
-        if ((dialogId == selfUserId || true) && !doNotShowReminder) {
+        if (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() && (dialogId == selfUserId || true) && !doNotShowReminder) {
             repeatContainer = new FrameLayout(context);
 
             final int textColor = datePickerColors != null ? datePickerColors.textColor : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
@@ -6022,6 +6048,16 @@ public class AlertsCreator {
         titleLayout.addView(titleView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 0, 12, 0, 0));
         titleView.setOnTouchListener((v, event) -> true);
 
+        ActionBarMenuItem optionsButton = new ActionBarMenuItem(context, null, 0, Theme.getColor(Theme.key_sheet_other, resourcesProvider));
+        optionsButton.setIcon(R.drawable.ic_upward);
+        optionsButton.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_player_actionBarSelector, resourcesProvider), 1));
+        titleLayout.addView(optionsButton, LayoutHelper.createFrame(40, 40, Gravity.TOP | Gravity.RIGHT, 0, 8, 5, 0));
+        optionsButton.setOnClickListener(v -> {
+            callback.run(1375315200);
+            builder.getDismissRunnable().run();
+        });
+        optionsButton.setContentDescription(LocaleController.getString(R.string.JumpToBeginning));
+
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.HORIZONTAL);
         linearLayout.setWeightSum(1.0f);
@@ -7266,6 +7302,7 @@ public class AlertsCreator {
         final LinearLayout linearLayout = new LinearLayout(parentActivity);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+            if (PasscodeHelper.isAccountHidden(a)) continue;
             TLRPC.User u = UserConfig.getInstance(a).getCurrentUser();
             if (u != null) {
                 AccountSelectCell cell = new AccountSelectCell(parentActivity, false);
@@ -7308,7 +7345,7 @@ public class AlertsCreator {
         int currentAccount = fragment.getCurrentAccount();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity, resourcesProvider);
-        builder.setDimAlpha(hideDim != null ? .5f : .6f);
+        builder.setDimAlpha(hideDim != null ? .22f : .32f);
         int count;
         if (selectedGroup != null) {
             count = selectedGroup.messages.size();
@@ -7465,7 +7502,7 @@ public class AlertsCreator {
             }
         }
 
-        final boolean[] deleteForAll = new boolean[1];
+        final boolean[] deleteForAll = {true};
         boolean canRevokeInbox = user != null && MessagesController.getInstance(currentAccount).canRevokePmInbox;
         int revokeTimeLimit;
         if (user != null) {
@@ -7602,9 +7639,9 @@ public class AlertsCreator {
                 CheckBoxCell cell = new CheckBoxCell(activity, 1, resourcesProvider);
                 cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 if (chat != null && hasNotOut) {
-                    cell.setText(LocaleController.getString(R.string.DeleteForAll), "", false, false);
+                    cell.setText(LocaleController.getString(R.string.DeleteForAll), "", true, false);
                 } else {
-                    cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", false, false);
+                    cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", true, false);
                 }
                 cell.setPadding(LocaleController.isRTL ? dp(16) : dp(8), 0, LocaleController.isRTL ? dp(8) : dp(16), 0);
                 frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 0));
@@ -7659,11 +7696,11 @@ public class AlertsCreator {
                 CheckBoxCell cell = new CheckBoxCell(activity, 1, resourcesProvider);
                 cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 if (canDeleteInbox) {
-                    cell.setText(LocaleController.formatString("DeleteMessagesOptionAlso", R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", false, false);
+                    cell.setText(LocaleController.formatString("DeleteMessagesOptionAlso", R.string.DeleteMessagesOptionAlso, UserObject.getFirstName(user)), "", true, false);
                 } else if (chat != null && (hasNotOut || myMessagesCount == count)) {
-                    cell.setText(LocaleController.getString(R.string.DeleteForAll), "", false, false);
+                    cell.setText(LocaleController.getString(R.string.DeleteForAll), "", true, false);
                 } else {
-                    cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", false, false);
+                    cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", true, false);
                 }
                 cell.setPadding(LocaleController.isRTL ? dp(16) : dp(8), 0, LocaleController.isRTL ? dp(8) : dp(16), 0);
                 frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 0));
@@ -8351,7 +8388,7 @@ public class AlertsCreator {
         FrameLayout dialogView = new FrameLayout(context);
         dialogView.setClipChildren(false);
 
-        EditText editTextView = new EditText(context);
+        EditText editTextView = new EditTextBoldCursor(context);
         editTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         editTextView.setHint(LocaleController.getString(R.string.SuggestedMessageDeclineReasonHint));
         editTextView.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));

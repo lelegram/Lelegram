@@ -13,3 +13,17 @@ TMessagesProj_App/afat/
 TMessagesProj_AppHockeyApp/afat/
 TMessagesProj_AppStandalone/afat/
 TMessagesProj_AppHuawei/afat/
+/TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java
+google-services.json
+sentry.properties
+docs/
+java_pid45800.hprof
+AGENTS.md
+openspec/
+.codex/
+*.bat
+.codex-tmp/
+.omc/
+.serena/
+nul
+*.log

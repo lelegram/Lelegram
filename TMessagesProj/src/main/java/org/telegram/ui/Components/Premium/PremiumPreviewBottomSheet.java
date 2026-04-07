@@ -139,7 +139,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         dummyCell = new PremiumFeatureCell(getContext());
         PremiumPreviewFragment.fillPremiumFeaturesList(premiumFeatures, currentAccount, false);
 
-        if (giftTier != null || UserConfig.getInstance(currentAccount).isPremium()) {
+        if (true || giftTier != null || UserConfig.getInstance(currentAccount).isPremium()) {
             buttonContainer.setVisibility(View.GONE);
         }
 
@@ -184,7 +184,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         rowCount += premiumFeatures.size();
         featuresEndRow = rowCount;
         sectionRow = rowCount++;
-        if (!UserConfig.getInstance(currentAccount).isPremium() && giftTier == null) {
+        if (false && !UserConfig.getInstance(currentAccount).isPremium() && giftTier == null) {
             buttonRow = rowCount++;
         }
     }

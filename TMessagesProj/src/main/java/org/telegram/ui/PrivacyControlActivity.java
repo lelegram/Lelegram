@@ -1570,7 +1570,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 readRow = rowCount++;
                 readDetailRow = rowCount++;
             }
-            if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && !getMessagesController().premiumFeaturesBlocked()) {
+            if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && getUserConfig().isPremium() && !getMessagesController().premiumFeaturesBlocked()) {
                 readPremiumRow = rowCount++;
                 readPremiumDetailRow = rowCount++;
             }

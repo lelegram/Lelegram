@@ -147,6 +147,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         getNotificationCenter().removeObserver(this, NotificationCenter.userInfoDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesEnabledUpdate);
+        Bulletin.removeDelegate(this);
         if (applyBulletin != null) {
             Runnable runnable = applyBulletin;
             applyBulletin = null;
@@ -175,6 +176,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         backDrawable.setAnimationTime(240);
         actionBar.setCastShadows(false);
         actionBar.setAddToContainer(false);
+        actionBar.setOccupyStatusBar(!AndroidUtilities.isTablet());
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
@@ -738,7 +740,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             fragmentView.addView(sharedMediaLayout);
         }
         fragmentView.addView(actionBar);
-        fragmentView.addView(avatarContainer);
+        actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
         fragmentView.blurBehindViews.add(sharedMediaLayout);
         if (type == TYPE_STORIES) {
             showSubtitle(0, false, false);
@@ -987,7 +989,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             subtitleTextView[i].setText(LocaleController.formatPluralString("GIFs", mediaCount[MediaDataController.MEDIA_GIF]), animated);
         } else if (id == SharedMediaLayout.TAB_RECOMMENDED_CHANNELS) {
             showSubtitle(i, true, true);
-            MessagesController.ChannelRecommendations rec = MessagesController.getInstance(currentAccount).getChannelRecommendations(dialogId);
+            MessagesController.ChannelRecommendations rec = MessagesController.getInstance(currentAccount).getChannelRecommendations(-dialogId);
             subtitleTextView[i].setText(LocaleController.formatPluralString("Channels", rec == null ? 0 : rec.more + rec.chats.size()), animated);
         }
     }

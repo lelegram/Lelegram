@@ -43,16 +43,20 @@ public class NotificationImageProvider extends ContentProvider implements Notifi
 
 	@Override
 	public boolean onCreate() {
-		for (int i = 0; i < UserConfig.getActivatedAccountsCount(); i++) {
-			NotificationCenter.getInstance(i).addObserver(this, NotificationCenter.fileLoaded);
+		for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+			if (UserConfig.getInstance(i).isClientActivated()) {
+				NotificationCenter.getInstance(i).addObserver(this, NotificationCenter.fileLoaded);
+			}
 		}
 		return true;
 	}
 
 	@Override
 	public void shutdown() {
-		for (int i = 0; i < UserConfig.getActivatedAccountsCount(); i++) {
-			NotificationCenter.getInstance(i).removeObserver(this, NotificationCenter.fileLoaded);
+		for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
+			if (UserConfig.getInstance(i).isClientActivated()) {
+				NotificationCenter.getInstance(i).removeObserver(this, NotificationCenter.fileLoaded);
+			}
 		}
 	}
 
@@ -106,6 +110,11 @@ public class NotificationImageProvider extends ContentProvider implements Notifi
 			String finalPath = uri.getQueryParameter("final_path");
 			String fallbackPath = uri.getQueryParameter("fallback");
 			File finalFile = new File(finalPath);
+			try {
+				ApplicationLoader.countDownLatch.await();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			ApplicationLoader.postInitApplication();
 			if (AndroidUtilities.isInternalUri(Uri.fromFile(finalFile))) {
 				throw new SecurityException("trying to read internal file");

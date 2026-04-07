@@ -114,6 +114,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.fylnx.lelegram.helpers.EntitiesHelper;
+import com.fylnx.lelegram.helpers.WebAppHelper;
+
 public class BotWebViewSheet extends Dialog implements NotificationCenter.NotificationCenterDelegate, BottomSheetTabsOverlay.Sheet {
     public final static int TYPE_WEB_VIEW_BUTTON = 0, TYPE_SIMPLE_WEB_VIEW_BUTTON = 1, TYPE_BOT_MENU_BUTTON = 2, TYPE_WEB_VIEW_BOT_APP = 3, TYPE_WEB_VIEW_BOT_MAIN = 4;
 
@@ -194,6 +197,8 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
     private ChatAttachAlertBotWebViewLayout.WebProgressView progressView;
     private Theme.ResourcesProvider resourcesProvider;
     private boolean ignoreLayout;
+
+    private String textToCopy;
 
     private int currentAccount;
     private long botId;
@@ -525,6 +530,11 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         webViewContainer.setOnVerifiedAge(onVerifiedAge);
         webViewContainer.setDelegate(new BotWebViewContainer.Delegate() {
             private boolean sentWebViewData;
+
+            @Override
+            public void onGetTextToCopy(String text) {
+                textToCopy = text;
+            }
 
             @Override
             public void onCloseRequested(Runnable callback) {
@@ -1344,9 +1354,10 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
         this.silent = props.silent;
         this.buttonText = props.buttonText;
         this.currentWebApp = props.app;
+        this.textToCopy = null;
 
         final TLRPC.User userbot = MessagesController.getInstance(currentAccount).getUser(botId);
-        CharSequence title = UserObject.getUserName(userbot);
+        CharSequence title = WebAppHelper.isInternalBot(props) ? WebAppHelper.getInternalBotName(props) : UserObject.getUserName(userbot);
         try {
             TextPaint tp = new TextPaint();
             tp.setTextSize(dp(20));
@@ -1662,7 +1673,7 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             o.addGap();
         }
         o
-            .addIf(onVerifiedAge == null, R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot), () -> {
+            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps), R.drawable.msg_bot, LocaleController.getString(R.string.BotWebViewOpenBot), () -> {
                 if (parentActivity instanceof LaunchActivity) {
                     ((LaunchActivity) parentActivity).presentFragment(ChatActivity.of(botId));
                 }
@@ -1685,10 +1696,16 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
                 webViewContainer.loadFlickerAndSettingsItem(currentAccount, botId, null);
                 webViewContainer.reload();
             })
-            .addIf(onVerifiedAge == null && userbot != null && userbot.bot_has_main_app, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut), () -> {
+            .addIf(WebAppHelper.isInternalBot(requestProps) && !TextUtils.isEmpty(textToCopy), R.drawable.msg_copy, LocaleController.getString(R.string.Copy), () -> {
+                if (textToCopy != null) {
+                    AndroidUtilities.addToClipboard(requestProps.internalType == WebAppHelper.INTERNAL_BOT_TLV ? EntitiesHelper.warpInLanguageSpan(textToCopy, "json") : textToCopy);
+                    showBulletin(bulletinFactory -> bulletinFactory.createCopyBulletin(LocaleController.getString(R.string.TextCopied)));
+                }
+            })
+            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps) && userbot != null && userbot.bot_has_main_app, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut), () -> {
                 MediaDataController.getInstance(currentAccount).installShortcut(botId, MediaDataController.SHORTCUT_TYPE_ATTACHED_BOT);
             })
-            .addIf(onVerifiedAge == null, R.drawable.menu_intro, LocaleController.getString(R.string.BotWebViewToS), () -> {
+            .addIf(onVerifiedAge == null && !WebAppHelper.isInternalBot(requestProps), R.drawable.menu_intro, LocaleController.getString(R.string.BotWebViewToS), () -> {
                 Browser.openUrl(getContext(), LocaleController.getString(R.string.BotWebViewToSLink));
             })
             .addIf(onVerifiedAge == null && currentBot != null && (currentBot.show_in_side_menu || currentBot.show_in_attach_menu), R.drawable.msg_delete, LocaleController.getString(R.string.BotWebViewDeleteBot), () -> {

@@ -9,6 +9,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
@@ -64,6 +65,8 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.RestrictedLanguagesSelectActivity;
 
 import java.util.ArrayList;
+
+import com.fylnx.lelegram.translator.Translator;
 
 public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.SelectableView> {
 
@@ -1407,7 +1410,8 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 menu.add(Menu.NONE, android.R.id.copy, 0, android.R.string.copy);
                 menu.add(Menu.NONE, R.id.menu_quote, 1, LocaleController.getString(R.string.Quote));
                 menu.add(Menu.NONE, android.R.id.selectAll, 2, android.R.string.selectAll);
-                menu.add(Menu.NONE, TRANSLATE, 3, LocaleController.getString(R.string.TranslateMessage));
+                menu.add(Menu.NONE, android.R.id.shareText, 3, LocaleController.getString(R.string.ShareFile));
+                menu.add(Menu.NONE, android.R.id.textAssist, 4, LocaleController.getString(R.string.TranslateMessage));
                 return true;
             }
 
@@ -1418,6 +1422,8 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                 if (copyItem != null) {
                     copyItem.setVisible(canCopy());
                 }
+                menu.findItem(android.R.id.shareText).setVisible(canCopy());
+                menu.findItem(android.R.id.textAssist).setVisible(canCopy());
                 if (selectedView != null) {
                     CharSequence charSequence = getText(selectedView, false);
                     if (!canCopy()) {
@@ -1428,7 +1434,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                         menu.getItem(2).setVisible(true);
                     }
                 }
-                if (onTranslateListener != null && LanguageDetector.hasSupport() && getSelectedText() != null) {
+                if (LanguageDetector.hasSupport() && getSelectedText() != null) {
                     LanguageDetector.detectLanguage(getSelectedText().toString(), lng -> {
                         translateFromLanguage = lng;
                         updateTranslateButton(menu);
@@ -1447,15 +1453,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
 
             private String translateFromLanguage = null;
             private void updateTranslateButton(Menu menu) {
-                String translateToLanguage = LocaleController.getInstance().getCurrentLocale().getLanguage();
-                menu.getItem(3).setVisible(
-                    onTranslateListener != null && (
-                        (
-                            translateFromLanguage != null &&
-                            !RestrictedLanguagesSelectActivity.getRestrictedLanguages().contains(translateFromLanguage)
-                        ) || !LanguageDetector.hasSupport()
-                    )
-                );
+                menu.getItem(4).setVisible(!LanguageDetector.hasSupport() || translateFromLanguage != null && !Translator.isLanguageRestricted(translateFromLanguage));
             }
 
             @Override
@@ -1479,13 +1477,39 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
                     AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
                     AndroidUtilities.runOnUIThread(showActionsRunnable);
                     return true;
-                } else if (itemId == TRANSLATE) {
-                    if (onTranslateListener != null) {
-                        String translateToLanguage = LocaleController.getInstance().getCurrentLocale().getLanguage();
-                        onTranslateListener.run(getSelectedText(), translateFromLanguage, translateToLanguage, () -> showActions());
+                } else if (itemId == android.R.id.textAssist) {
+                    if (!isInSelectionMode()) {
+                        return true;
                     }
+                    CharSequence str = getSelectedText();
+                    if (str == null) {
+                        return true;
+                    }
+                    var view = selectedView instanceof View ? (View) selectedView : null;
+                    Translator.showTranslateDialog(textSelectionOverlay.getContext(), str.toString(), false, null, null, translateFromLanguage, view, getResourcesProvider());
                     hideActions();
-                    return true;
+                    clear(true);
+                    if (TextSelectionHelper.this.callback != null) {
+                        TextSelectionHelper.this.callback.onTextTranslated();
+                    }
+                } else if (itemId == android.R.id.shareText) {
+                    if (!isInSelectionMode()) {
+                        return true;
+                    }
+                    CharSequence str = getSelectedText();
+                    if (str == null) {
+                        return true;
+                    }
+                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                    shareIntent.setType("text/plain");
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, str.toString());
+                    Intent chooserIntent = Intent.createChooser(shareIntent, LocaleController.getString(R.string.ShareFile));
+                    textSelectionOverlay.getContext().startActivity(chooserIntent);
+                    hideActions();
+                    clear(true);
+                    if (TextSelectionHelper.this.callback != null) {
+                        TextSelectionHelper.this.callback.onTextTranslated();
+                    }
                 } else if (itemId == R.id.menu_quote) {
                     quoteText();
                     hideActions();
@@ -1782,6 +1806,7 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     public static class Callback {
         public void onStateChanged(boolean isSelected){};
         public void onTextCopied(){};
+        public void onTextTranslated(){};
     }
 
     protected void fillLayoutForOffset(int offset, LayoutBlock layoutBlock) {

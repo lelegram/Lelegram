@@ -145,7 +145,7 @@ void custom_log(void *ptr, int level, const char* fmt, va_list vl){
     av_log_format_line(ptr, level, fmt, vl2, line, sizeof(line), &print_prefix);
     va_end(vl2);
 
-    LOGE(line);
+    LOGE("%s", line);
 }
 
 static enum AVPixelFormat get_format(AVCodecContext *ctx,
@@ -392,12 +392,8 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileDr
         info->fmt_ctx->pb = avio;
 
         if ((ret = avformat_open_input(&info->fmt_ctx, nullptr, nullptr, nullptr)) < 0) {
-            LOGE("can't open source file at offset %s (offset=%lld), %s", info->src, fileOffset, av_err2str(ret));
-            info->fmt_ctx = nullptr;
-            if (avio) {
-                av_freep(&avio->buffer);
-                avio_context_free(&avio);
-            }
+            LOGE("can't open source file at offset %s, %s", info->src, av_err2str(ret));
+            av_free(ioBuf);
             close(fd);
             delete ioCtx;
             delete info;

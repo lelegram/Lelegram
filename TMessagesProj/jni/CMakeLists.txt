@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 3.10.2)
 
-set(CMAKE_CXX_FLAGS "-std=c++14 -DANDROID -g")
-set(CMAKE_C_FLAGS "-w -std=c11 -DANDROID -D_LARGEFILE_SOURCE=1 -g")
-set(CMAKE_ASM_FLAGS "${CFLAGS} -x assembler-with-cpp")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--exclude-libs,libtgvoip.a,libtgcalls.a,libtgcalls_tp.a,libtgnet.a,libflac.a,librlottie.a,libsqlite.a,
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
+add_compile_options("-Wno-builtin-macro-redefined" "-D__FILE__=__FILE_NAME__")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-Bsymbolic,--exclude-libs,libtgvoip.a,libtgcalls.a,libtgcalls_tp.a,libtgnet.a,libflac.a,librlottie.a,libsqlite.a,
 ${CMAKE_HOME_DIRECTORY}/ffmpeg/${ANDROID_ABI}/libswscale.a,
 ${CMAKE_HOME_DIRECTORY}/ffmpeg/${ANDROID_ABI}/libavformat.a,
 ${CMAKE_HOME_DIRECTORY}/ffmpeg/${ANDROID_ABI}/libavcodec.a,
@@ -264,15 +262,11 @@ target_include_directories(rlottie PUBLIC
         rlottie/src/vector/stb)
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    target_compile_options(rlottie PUBLIC
-            -fno-integrated-as)
     target_compile_definitions(rlottie PUBLIC
             USE_ARM_NEON)
     target_sources(rlottie PRIVATE
             rlottie/src/vector/pixman/pixman-arm-neon-asm.S)
 elseif(${ANDROID_ABI} STREQUAL "arm64-v8a")
-    target_compile_options(rlottie PUBLIC
-            -fno-integrated-as)
     target_compile_definitions(rlottie PUBLIC
             USE_ARM_NEON __ARM64_NEON__)
     target_sources(rlottie PRIVATE
@@ -327,41 +321,12 @@ set_target_properties(sqlite PROPERTIES
 target_compile_definitions(sqlite PUBLIC
         NULL=0 SOCKLEN_T=socklen_t LOCALE_NOT_USED ANDROID_NDK DISABLE_IMPORTGL AVOID_TABLES ANDROID_TILE_BASED_DECODE HAVE_STRCHRNUL=0 ANDROID_ARMV6_IDCT)
 
-#breakpad
-add_library(breakpad STATIC
-        third_party/breakpad/src/client/linux/crash_generation/crash_generation_client.cc
-        third_party/breakpad/src/client/linux/handler/exception_handler.cc
-        third_party/breakpad/src/client/linux/handler/minidump_descriptor.cc
-        third_party/breakpad/src/client/linux/log/log.cc
-        third_party/breakpad/src/client/linux/dump_writer_common/thread_info.cc
-        third_party/breakpad/src/client/linux/dump_writer_common/seccomp_unwinder.cc
-        third_party/breakpad/src/client/linux/dump_writer_common/ucontext_reader.cc
-        third_party/breakpad/src/client/linux/microdump_writer/microdump_writer.cc
-        third_party/breakpad/src/client/linux/minidump_writer/linux_dumper.cc
-        third_party/breakpad/src/client/linux/minidump_writer/linux_ptrace_dumper.cc
-        third_party/breakpad/src/client/linux/minidump_writer/minidump_writer.cc
-        third_party/breakpad/src/client/minidump_file_writer.cc
-        third_party/breakpad/src/common/android/breakpad_getcontext.S
-        third_party/breakpad/src/common/convert_UTF.c
-        third_party/breakpad/src/common/md5.cc
-        third_party/breakpad/src/common/string_conversion.cc
-        third_party/breakpad/src/common/linux/elfutils.cc
-        third_party/breakpad/src/common/linux/file_id.cc
-        third_party/breakpad/src/common/linux/guid_creator.cc
-        third_party/breakpad/src/common/linux/linux_libc_support.cc
-        third_party/breakpad/src/common/linux/memory_mapped_file.cc
-        third_party/breakpad/src/common/linux/safe_readlink.cc)
-set_target_properties(breakpad PROPERTIES ANDROID_ARM_MODE arm)
-set_property(SOURCE third_party/breakpad/src/common/android/breakpad_getcontext.S PROPERTY LANGUAGE C)
-target_include_directories(breakpad PUBLIC
-        third_party/breakpad/src/common/android/include
-        third_party/breakpad/src)
-
 
 #voip
 include(${CMAKE_HOME_DIRECTORY}/voip/CMakeLists.txt)
+include(${CMAKE_HOME_DIRECTORY}/colorado/CMakeLists.txt)
 
-set(NATIVE_LIB "tmessages.49")
+set(NATIVE_LIB "lele.49")
 
 #tmessages
 add_library(${NATIVE_LIB} SHARED
@@ -670,8 +635,8 @@ target_link_libraries(${NATIVE_LIB}
         EGL
         android
         OpenSLES
-        cpufeatures
-        breakpad)
+        colorado
+        cpufeatures)
 
 #if (${ANDROID_ABI} STREQUAL "x86" OR ${ANDROID_ABI} STREQUAL "x86_64")
 #    target_link_libraries(${NATIVE_LIB}

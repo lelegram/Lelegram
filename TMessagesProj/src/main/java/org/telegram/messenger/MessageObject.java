@@ -8,6 +8,9 @@
 
 package org.telegram.messenger;
 
+import com.fylnx.lelegram.copy.CopyRestrictionsHelper;
+import com.fylnx.lelegram.protection.ContentProtectionHelper;
+
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.replaceTags;
 import static org.telegram.messenger.LocaleController.formatPluralSpannable;
@@ -27,6 +30,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Looper;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -115,6 +119,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.fylnx.lelegram.LeleConfig;
+import com.fylnx.lelegram.helpers.MessageFilterHelper;
+import com.fylnx.lelegram.helpers.MessageHelper;
+import com.fylnx.lelegram.syntaxhighlight.SyntaxHighlight;
+import com.fylnx.lelegram.translator.Translator;
 
 import me.vkryl.core.BitwiseUtils;
 
@@ -292,6 +302,8 @@ public class MessageObject {
     public boolean previewForward;
     public boolean sentHighQuality;
 
+    public boolean translating;
+
     public boolean notime;
 
     public int getChatMode() {
@@ -314,6 +326,7 @@ public class MessageObject {
     public TLRPC.MessageMedia previousMedia;
     public TLRPC.Document documentToPollAddOption;
     public ArrayList<TLRPC.MessageEntity> previousMessageEntities;
+    public ArrayList<TLRPC.MessageEditHistoryEntry> previousEditHistory;
     public String previousAttachPath;
 
     public SvgHelper.SvgDrawable pathThumb;
@@ -625,7 +638,7 @@ public class MessageObject {
     }
 
     public boolean hasMediaSpoilers() {
-        return !isRepostPreview && (messageOwner.media != null && messageOwner.media.spoiler || needDrawBluredPreview()) || isHiddenSensitive();
+        return !isRepostPreview && (messageOwner.media != null && messageOwner.media.spoiler || needDrawBluredPreview() || shouldBlockMessage()) || isHiddenSensitive();
     }
 
     public Boolean isSensitiveCached;
@@ -748,6 +761,8 @@ public class MessageObject {
 
     public void copyStableParams(MessageObject old) {
         stableId = old.stableId;
+        deleted = old.deleted;
+        messageOwner.deleted = old.messageOwner.deleted || old.deleted;
         messageOwner.premiumEffectWasPlayed = old.messageOwner.premiumEffectWasPlayed;
         forcePlayEffect = old.forcePlayEffect;
         wasJustSent = old.wasJustSent;
@@ -1309,8 +1324,10 @@ public class MessageObject {
             boolean checkCaption = true;
 
             captionAbove = false;
+            boolean blocked = false;
             for (int a = (reversed ? count - 1 : 0); (reversed ? a >= 0 : a < count);) {
                 MessageObject messageObject = messages.get(a);
+                blocked = blocked || messageObject.shouldBlockMessage();
                 if (a == (reversed ? count - 1 : 0)) {
                     messageObject.isOutOwnerCached = null;
                     isOut = messageObject.isOutOwner();
@@ -1675,6 +1692,7 @@ public class MessageObject {
                     }
                 }
                 MessageObject messageObject = messages.get(a);
+                messageObject.messageBlocked = blocked;
                 if (!isOut && messageObject.needDrawAvatarInternal()) {
                     if (pos.edge) {
                         if (pos.spanSize != 1000) {
@@ -1816,6 +1834,7 @@ public class MessageObject {
         localUserName = userName;
         messageText = formattedMessage;
         messageOwner = message;
+        deleted = message.deleted;
         localChannel = isChannel;
         localSupergroup = supergroup;
         localEdit = edit;
@@ -1871,6 +1890,7 @@ public class MessageObject {
 
         currentAccount = accountNum;
         messageOwner = message;
+        deleted = message.deleted;
         replyMessageObject = replyToMessage;
         eventId = eid;
         wasUnread = !messageOwner.out && messageOwner.unread;
@@ -1882,6 +1902,10 @@ public class MessageObject {
         TLRPC.User fromUser = null;
         if (message.from_id instanceof TLRPC.TL_peerUser) {
             fromUser = getUser(users, sUsers, message.from_id.user_id);
+        }
+
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            messageBlocked = MessageFilterHelper.shouldBlockMessage(this);
         }
 
         updateMessageText(users, chats, sUsers, sChats);
@@ -2472,7 +2496,7 @@ public class MessageObject {
             }
             TLRPC.TL_chatBannedRights o = action.prev_participant.banned_rights;
             TLRPC.TL_chatBannedRights n = action.new_participant.banned_rights;
-            if (chat.megagroup && (n == null || !n.view_messages || o != null && n.until_date != o.until_date)) {
+            if (chat.megagroup && (o == null || n == null || !n.view_messages || o != null && n.until_date != o.until_date)) {
                 StringBuilder rights;
                 StringBuilder bannedDuration;
                 if (n != null && !AndroidUtilities.isBannedForever(n)) {
@@ -3599,10 +3623,11 @@ public class MessageObject {
         return updateTranslation(false);
     }
 
+    public boolean manually = false;
     public boolean translated = false;
     public boolean summarized = false;
     public boolean updateTranslation(boolean force) {
-        boolean replyUpdated = replyMessageObject != null && replyMessageObject != this && replyMessageObject.updateTranslation(force);
+        boolean replyUpdated = !manually && replyMessageObject != null && replyMessageObject != this && replyMessageObject.updateTranslation(force);
         TranslateController translateController = MessagesController.getInstance(currentAccount).getTranslateController();
         final TLRPC.TL_textWithEntities translatedText = messageOwner != null ? (messageOwner.voiceTranscriptionOpen ? messageOwner.translatedVoiceTranscription : messageOwner.translatedText) : null;
         final TLRPC.TL_textWithEntities summarizedText = messageOwner != null && messageOwner.summarizedOpen ? messageOwner.summaryText : null;
@@ -3612,10 +3637,10 @@ public class MessageObject {
             messageOwner != null &&
             messageOwner.summarizedOpen &&
             TranslateController.isSummarizable(this) &&
-            TranslateController.isTranslatable(this) &&
-            translateController.isTranslatingDialog(getDialogId()) &&
-            !translateController.isTranslateDialogHidden(getDialogId()) &&
-            TextUtils.equals(translateController.getDialogTranslateTo(getDialogId()), messageOwner.translatedSummaryLanguage)
+            TranslateController.isTranslatable(this, manually) &&
+            (translateController.isTranslatingDialog(getDialogId()) &&
+            !translateController.isTranslateDialogHidden(getDialogId()) || manually) &&
+            TextUtils.equals(manually ? Translator.getCurrentTargetLanguage() : translateController.getDialogTranslateTo(getDialogId()), messageOwner.translatedSummaryLanguage)
         ) {
             if (summarized && translated) {
                 return replyUpdated || false;
@@ -3641,11 +3666,11 @@ public class MessageObject {
             return replyUpdated || true;
         } else if (
             messageOwner != null &&
-            TranslateController.isTranslatable(this) &&
-            translateController.isTranslatingDialog(getDialogId()) &&
-            !translateController.isTranslateDialogHidden(getDialogId()) &&
+            TranslateController.isTranslatable(this, manually) &&
+            (translateController.isTranslatingDialog(getDialogId()) &&
+            !translateController.isTranslateDialogHidden(getDialogId()) || manually) &&
             (translatedText != null || messageOwner.translatedPoll != null) &&
-            TextUtils.equals(translateController.getDialogTranslateTo(getDialogId()), messageOwner.translatedToLanguage)
+            TextUtils.equals(manually ? Translator.getCurrentTargetLanguage() : Translator.getTargetLanguage(translateController.getDialogTranslateTo(getDialogId())), messageOwner.translatedToLanguage)
         ) {
             if (translated && !summarized) {
                 return replyUpdated || false;
@@ -3653,7 +3678,10 @@ public class MessageObject {
             translated = true;
             summarized = false;
             if (translatedText != null) {
-                applyNewText(translatedText.text);
+                mergedEntities = null;
+                applyNewText(!LeleConfig.showOriginal ? translatedText.text : (
+                        (messageOwner.voiceTranscriptionOpen ? messageOwner.voiceTranscription : messageOwner.message) +
+                                Translator.TRANSLATION_SEPARATOR + translatedText.text));
                 generateCaption();
             }
             return replyUpdated || true;
@@ -4338,20 +4366,23 @@ public class MessageObject {
                     videoEditedInfo.notReadyYet = notReadyYet;
                 }
             }
-            if (messageOwner.send_state == MESSAGE_SEND_STATE_EDITING && (param = messageOwner.params.get("prevMedia")) != null) {
-                SerializedData serializedData = new SerializedData(Base64.decode(param, Base64.DEFAULT));
-                int constructor = serializedData.readInt32(false);
-                previousMedia = TLRPC.MessageMedia.TLdeserialize(serializedData, constructor, false);
-                previousMessage = serializedData.readString(false);
-                previousAttachPath = serializedData.readString(false);
-                int count = serializedData.readInt32(false);
-                previousMessageEntities = new ArrayList<>(count);
-                for (int a = 0; a < count; a++) {
-                    constructor = serializedData.readInt32(false);
-                    TLRPC.MessageEntity entity = TLRPC.MessageEntity.TLdeserialize(serializedData, constructor, false);
-                    previousMessageEntities.add(entity);
+            if (messageOwner.send_state == MESSAGE_SEND_STATE_EDITING) {
+                previousEditHistory = MessageCustomParamsHelper.decodeEditHistory(messageOwner.params.get(MessageCustomParamsHelper.PREVIOUS_EDIT_HISTORY_PARAM));
+                if ((param = messageOwner.params.get(MessageCustomParamsHelper.PREVIOUS_MEDIA_PARAM)) != null) {
+                    SerializedData serializedData = new SerializedData(Base64.decode(param, Base64.DEFAULT));
+                    int constructor = serializedData.readInt32(false);
+                    previousMedia = TLRPC.MessageMedia.TLdeserialize(serializedData, constructor, false);
+                    previousMessage = serializedData.readString(false);
+                    previousAttachPath = serializedData.readString(false);
+                    int count = serializedData.readInt32(false);
+                    previousMessageEntities = new ArrayList<>(count);
+                    for (int a = 0; a < count; a++) {
+                        constructor = serializedData.readInt32(false);
+                        TLRPC.MessageEntity entity = TLRPC.MessageEntity.TLdeserialize(serializedData, constructor, false);
+                        previousMessageEntities.add(entity);
+                    }
+                    serializedData.cleanup();
                 }
-                serializedData.cleanup();
             }
         }
     }
@@ -6203,7 +6234,6 @@ public class MessageObject {
         if (isSponsored()) {
             type = TYPE_TEXT;
         } else if (channelJoined) {
-            contentType = 0;
             type = TYPE_JOINED_CHANNEL;
             channelJoinedExpanded = MessagesController.getInstance(currentAccount).getMainSettings().getBoolean("c" + getDialogId() + "_rec", true);
         } else if (messageOwner instanceof TLRPC.TL_message || messageOwner instanceof TLRPC.TL_messageForwarded_old2) {
@@ -6552,7 +6582,7 @@ public class MessageObject {
                     height = attribute.h;
                 }
             }
-            if (animated && width <= 1280 && height <= 1280) {
+            if (animated/* && width <= 1280 && height <= 1280*/) {
                 return true;
             }
         }
@@ -7185,8 +7215,10 @@ public class MessageObject {
         } else if (messageOwner.translatedText != null && translated) {
             captionSummarized = false;
             captionTranslated = true;
-            text = messageOwner.translatedText.text;
-            entities = messageOwner.translatedText.entities;
+            mergedEntities = null;
+            text = !LeleConfig.showOriginal ? messageOwner.translatedText.text : (messageOwner.message +
+                    Translator.TRANSLATION_SEPARATOR + messageOwner.translatedText.text);
+            entities =  getEntities(false);
         } else {
             captionSummarized = false;
             captionTranslated = false;
@@ -7338,6 +7370,13 @@ public class MessageObject {
                                 uri = uri.replaceAll("∕|⁄|%E2%81%84|%E2%88%95", "/");
                             }
                             url = new URLSpanNoUnderline(uri);
+                            if (charSequence.charAt(start) == '#') {
+                                var run = new TextStyleSpan.TextStyleRun();
+                                run.start = start;
+                                run.end = end;
+                                run.urlEntity = new TLRPC.TL_messageEntityHashtag();
+                                SyntaxHighlight.highlight(run, spannable);
+                            }
                         }
                     }
                 }
@@ -7484,12 +7523,12 @@ public class MessageObject {
             entities.add(entityItalic);
             return addEntitiesToText(text, entities, isOutOwner(), true, photoViewer, useManualParse);
         } else {
-            return addEntitiesToText(text, getEntities(), isOutOwner(), true, photoViewer, useManualParse);
+            return addEntitiesToText(text, MessageFilterHelper.checkBlockedEntities(this, getEntities()), isOutOwner(), true, photoViewer, useManualParse);
         }
     }
 
     public void replaceEmojiToLottieFrame(CharSequence text, int[] emojiOnly) {
-        if (!(text instanceof Spannable)) {
+        if (!(text instanceof Spannable) || Emoji.isSelectedEmojiPack) {
             return;
         }
         Spannable spannable = (Spannable) text;
@@ -7520,6 +7559,12 @@ public class MessageObject {
     }
 
     public ArrayList<TLRPC.MessageEntity> getEntities() {
+        return getEntities(true);
+    }
+
+    private ArrayList<TLRPC.MessageEntity> mergedEntities;
+
+    public ArrayList<TLRPC.MessageEntity> getEntities(boolean voice) {
         if (messageOwner == null) return null;
         if (summarized) {
             if (translated && messageOwner.translatedSummaryText != null) {
@@ -7530,10 +7575,24 @@ public class MessageObject {
             return null;
         }
         if (translated) {
-            if (messageOwner.voiceTranscriptionOpen) {
-                return messageOwner.translatedVoiceTranscription != null ? messageOwner.translatedVoiceTranscription.entities : null;
+            if (voice && messageOwner.voiceTranscriptionOpen) {
+                if (LeleConfig.showOriginal) {
+                    return null;
+                } else {
+                    return messageOwner.translatedVoiceTranscription != null ? messageOwner.translatedVoiceTranscription.entities : null;
+                }
             } else {
-                return messageOwner.translatedText != null ? messageOwner.translatedText.entities : null;
+                if (LeleConfig.showOriginal) {
+                    if (mergedEntities != null) {
+                        return mergedEntities;
+                    }
+                    var offset = messageOwner.message.length() + Translator.TRANSLATION_SEPARATOR.length();
+                    mergedEntities = Translator.mergeEntities(messageOwner.entities,
+                            messageOwner.translatedText != null ? messageOwner.translatedText.entities : null, offset);
+                    return mergedEntities;
+                } else {
+                    return messageOwner.translatedText != null ? messageOwner.translatedText.entities : null;
+                }
             }
         }
         return messageOwner.entities;
@@ -7828,6 +7887,9 @@ public class MessageObject {
                 if (linksCount >= MediaDataController.MAX_LINKS_COUNT) continue;
                 linksCount++;
                 spannable.setSpan(new URLSpanNoUnderline(url, run), run.start, run.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                if (run.urlEntity instanceof TLRPC.TL_messageEntityHashtag) {
+                    SyntaxHighlight.highlight(run, spannable);
+                }
             } else if (run.urlEntity instanceof TLRPC.TL_messageEntityEmail) {
                 if (linksCount >= MediaDataController.MAX_LINKS_COUNT) continue;
                 linksCount++;
@@ -8170,11 +8232,7 @@ public class MessageObject {
             return;
         }
         boolean hasUrls = applyEntities();
-        boolean noforwards = messageOwner != null && messageOwner.noforwards;
-        if (!noforwards) {
-            final long dialogId = getDialogId();
-            noforwards = MessagesController.getInstance(currentAccount).isPeerNoForwards(dialogId);
-        }
+        boolean copyRestricted = CopyRestrictionsHelper.shouldBlockCopy(MessagesController.getInstance(currentAccount), getDialogId(), this);
 
         textLayoutBlocks = new ArrayList<>();
         textWidth = 0;
@@ -8365,7 +8423,7 @@ public class MessageObject {
                     block.padBottom = dp(7);
                 }
             } else if (block.code) {
-                block.layoutCode(range.language, range.end - range.start, noforwards);
+                block.layoutCode(range.language, range.end - range.start, copyRestricted);
                 block.padTop = dp(4) + block.languageHeight + (block.first ? 0 : dp(5));
                 block.padBottom = dp(4) + (block.last ? 0 : dp(7)) + (block.hasCodeCopyButton ? dp(38) : 0);
             }
@@ -8661,11 +8719,7 @@ public class MessageObject {
         public TextLayoutBlocks(MessageObject messageObject, @NonNull CharSequence text, TextPaint textPaint, int width) {
             this.text = text;
             textWidth = 0;
-            boolean noforwards = messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.noforwards;
-            if (messageObject != null && !noforwards) {
-                final long dialogId = messageObject.getDialogId();
-                noforwards = MessagesController.getInstance(messageObject.currentAccount).isPeerNoForwards(dialogId);
-            }
+            boolean copyRestricted = CopyRestrictionsHelper.shouldBlockCopy(messageObject != null ? MessagesController.getInstance(messageObject.currentAccount) : null, messageObject != null ? messageObject.getDialogId() : 0, messageObject);
 
             hasCode = text instanceof Spanned && ((Spanned) text).getSpans(0, text.length(), CodeHighlighting.Span.class).length > 0;
             hasQuote = text instanceof Spanned && ((Spanned) text).getSpans(0, text.length(), QuoteSpan.QuoteStyleSpan.class).length > 0;
@@ -8827,7 +8881,7 @@ public class MessageObject {
                         block.padBottom = dp(7);
                     }
                 } else if (block.code) {
-                    block.layoutCode(range.language, range.end - range.start, noforwards);
+                    block.layoutCode(range.language, range.end - range.start, copyRestricted);
                     block.padTop = dp(4) + block.languageHeight + (block.first ? 0 : dp(5));
                     block.padBottom = dp(4) + (block.last ? 0 : dp(7)) + (block.hasCodeCopyButton ? dp(38) : 0);
                 }
@@ -9453,7 +9507,7 @@ public class MessageObject {
         if (message instanceof TLRPC.TL_message_secret) {
             return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || isVideoMessage(message)) && message.ttl > 0 && message.ttl <= 60;
         } else {
-            return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
+            return !LeleConfig.shouldNOTTrustMe && (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
         }
     }
 
@@ -9465,7 +9519,7 @@ public class MessageObject {
         if (message instanceof TLRPC.TL_message_secret) {
             return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || isRoundVideoMessage(message) || isVideoMessage(message)) && message.ttl > 0 && message.ttl <= 60;
         } else if (message instanceof TLRPC.TL_message) {
-            return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
+            return !LeleConfig.shouldNOTTrustMe && (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
         }
         return false;
     }
@@ -9474,7 +9528,7 @@ public class MessageObject {
         if (message instanceof TLRPC.TL_message_secret) {
             return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || isRoundVideoMessage(message) || isVideoMessage(message)) && getMedia(message).ttl_seconds != 0;
         } else if (message instanceof TLRPC.TL_message) {
-            return (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
+            return !LeleConfig.shouldNOTTrustMe && (getMedia(message) instanceof TLRPC.TL_messageMediaPhoto || getMedia(message) instanceof TLRPC.TL_messageMediaDocument) && getMedia(message).ttl_seconds != 0;
         }
         return false;
     }
@@ -9489,7 +9543,7 @@ public class MessageObject {
             int ttl = Math.max(messageOwner.ttl, getMedia(messageOwner).ttl_seconds);
             return ttl > 0 && ((getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || isVideo() || isGif()) && ttl <= 60 || isRoundVideo());
         } else if (messageOwner instanceof TLRPC.TL_message) {
-            return (getMedia(messageOwner) != null && getMedia(messageOwner).ttl_seconds != 0) && (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument);
+            return !LeleConfig.shouldNOTTrustMe && (getMedia(messageOwner) != null && getMedia(messageOwner).ttl_seconds != 0) && (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument);
         }
         return false;
     }
@@ -9502,7 +9556,7 @@ public class MessageObject {
         if (messageOwner instanceof TLRPC.TL_message_secret) {
             return (((getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto) || isGif()) && messageOwner.ttl > 0 && messageOwner.ttl <= 60 || isVoice() || isRoundVideo() || isVideo());
         } else if (messageOwner instanceof TLRPC.TL_message) {
-            return (getMedia(messageOwner) != null && getMedia(messageOwner).ttl_seconds != 0) && (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument);
+            return !LeleConfig.shouldNOTTrustMe && (getMedia(messageOwner) != null && getMedia(messageOwner).ttl_seconds != 0) && (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument);
         }
         return false;
     }
@@ -9570,6 +9624,15 @@ public class MessageObject {
             }
         }
         return message.dialog_id;
+    }
+
+    public Boolean messageBlocked;
+
+    public boolean shouldBlockMessage() {
+        if (messageBlocked == null) {
+            messageBlocked = MessageFilterHelper.shouldBlockMessage(this);
+        }
+        return messageBlocked;
     }
 
     public long getSavedDialogId() {
@@ -9834,7 +9897,7 @@ public class MessageObject {
             }
             if (!TextUtils.isEmpty(document.mime_type)) {
                 String mime = document.mime_type.toLowerCase();
-                if (mime.equals("audio/flac") || mime.equals("audio/ogg") || mime.equals("audio/opus") || mime.equals("audio/x-opus+ogg")) {
+                if (mime.equals("audio/flac") || mime.equals("audio/ogg") || mime.equals("audio/opus") || mime.equals("audio/x-opus+ogg") || mime.equals("audio/wav") || mime.equals("audio/x-wav")) {
                     return true;
                 } else if (mime.equals("application/octet-stream") && FileLoader.getDocumentFileName(document).endsWith(".opus")) {
                     return true;
@@ -11011,7 +11074,7 @@ public class MessageObject {
     public boolean canForwardMessage() {
         if (isQuickReply()) return false;
         if (type == TYPE_GIFT_STARS || type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SUGGEST_BIRTHDAY || type == TYPE_GIFT_OFFER || type == TYPE_SHARING_OFFER) return false;
-        return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !isSponsored() && !messageOwner.noforwards;
+        return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !isSponsored() && !ContentProtectionHelper.shouldBlockProtectedAction(false, messageOwner.noforwards);
     }
 
     public boolean canEditMedia() {

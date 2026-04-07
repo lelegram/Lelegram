@@ -6,6 +6,8 @@ import static org.telegram.ui.Components.EditTextEmoji.STYLE_GIFT;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
@@ -38,6 +40,7 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.EditTextEmoji;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.ReplaceableIconDrawable;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.TextStyleSpan;
 import org.telegram.ui.Components.TypefaceSpan;
@@ -47,6 +50,8 @@ public class EditEmojiTextCell extends FrameLayout {
     private boolean ignoreEditText;
     public final EditTextEmoji editTextEmoji;
     private int maxLength;
+    private ImageView iconImageView;
+    private ReplaceableIconDrawable iconImageDrawable;
 
     private boolean showLimitWhenEmpty;
     private int showLimitWhenNear = -1;
@@ -267,6 +272,25 @@ public class EditEmojiTextCell extends FrameLayout {
         addView(editTextEmoji, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP));
 
         updateLimitText();
+    }
+
+    public void setOnChangeIconListener(OnClickListener listener) {
+        if (iconImageView == null) {
+            editTextEmoji.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.RIGHT | Gravity.TOP, 72 - 7 - 21, 0, 0, 0));
+            iconImageView = new ImageView(getContext());
+            iconImageView.setFocusable(true);
+            iconImageView.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_stickers_menuSelector)));
+            iconImageView.setScaleType(ImageView.ScaleType.CENTER);
+            iconImageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_messagePanelIcons), PorterDuff.Mode.MULTIPLY));
+            iconImageView.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+            iconImageView.setImageDrawable(iconImageDrawable = new ReplaceableIconDrawable(getContext()));
+            addView(iconImageView, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.CENTER_VERTICAL, 12, 0, 8, 0));
+        }
+        iconImageView.setOnClickListener(listener);
+    }
+
+    public void setIcon(int icon, boolean animated) {
+        iconImageDrawable.setIcon(icon, animated);
     }
 
     public void setText(CharSequence text) {
