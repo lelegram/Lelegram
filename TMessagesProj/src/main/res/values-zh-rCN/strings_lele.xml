@@ -13,6 +13,8 @@
     <string name="Chat">聊天</string>
     <string name="KeepDeletedMessages">防撤回</string>
     <string name="KeepDeletedMessagesDesc">对方撤回消息后仍在本地保留，并在右下角显示“已删除”标记。</string>
+    <string name="HideDeletedMessages">隐藏已删除消息</string>
+    <string name="HideDeletedMessagesDesc">从普通聊天时间线隐藏本地保留的已撤回消息，同时仍可通过已删除消息搜索找到。</string>
     <string name="ForwardDeletedMessages">转发已删除消息</string>
     <string name="ForwardDeletedMessagesDesc">转发本地保留的已删除消息时，改为复制内容发送，而不是请求服务器转发原消息。</string>
     <string name="AllowProtectedContentActions">允许忽略内容保护限制</string>

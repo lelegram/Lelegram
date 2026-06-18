@@ -104,6 +104,9 @@
   @com.google.gson.annotations.SerializedName <fields>;
 }
 
+# Keep automation model classes for Gson serialization/deserialization
+-keep class com.fylnx.lelegram.automation.AutomationModels$** { *; }
+
 # Gson uses generic type information stored in a class file when working with fields. Proguard
 # removes such information by default, so configure it to keep all of it.
 -keepattributes Signature,InnerClasses,EnclosingMethod

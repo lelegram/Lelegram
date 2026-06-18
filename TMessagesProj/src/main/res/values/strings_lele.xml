@@ -16,6 +16,8 @@
     <string name="Chat">Chat</string>
     <string name="KeepDeletedMessages">Keep deleted messages</string>
     <string name="KeepDeletedMessagesDesc">Preserve recalled messages locally and mark them as deleted in the time area.</string>
+    <string name="HideDeletedMessages">Hide deleted messages</string>
+    <string name="HideDeletedMessagesDesc">Hide locally preserved recalled messages from normal chat timelines while keeping them available in deleted-message search.</string>
     <string name="ForwardDeletedMessages">Forward deleted messages</string>
     <string name="ForwardDeletedMessagesDesc">When forwarding locally preserved deleted messages, send a copied message instead of using server-side forward.</string>
     <string name="AllowProtectedContentActions">Allow protected content actions</string>

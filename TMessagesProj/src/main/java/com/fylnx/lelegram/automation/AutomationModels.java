@@ -3,6 +3,7 @@ package com.fylnx.lelegram.automation;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
@@ -54,35 +55,56 @@ public final class AutomationModels {
     }
 
     public static final class AutomationConfig {
+        @SerializedName("version")
         public int version = SCHEMA_VERSION;
+        @SerializedName("rules")
         public ArrayList<AutomationRule> rules = new ArrayList<>();
     }
 
     public static final class AutomationRule {
+        @SerializedName("id")
         public String id;
+        @SerializedName("name")
         public String name;
+        @SerializedName("enabled")
         public boolean enabled = true;
+        @SerializedName("trigger")
         public String trigger = TRIGGER_MESSAGE_RECEIVED;
+        @SerializedName("filters")
         public ArrayList<AutomationFilter> filters = new ArrayList<>();
+        @SerializedName("actions")
         public ArrayList<AutomationAction> actions = new ArrayList<>();
     }
 
     public static final class AutomationFilter {
+        @SerializedName("field")
         public String field;
+        @SerializedName("operator")
         public String operator = OP_EQUALS;
+        @SerializedName("value")
         public Object value;
     }
 
     public static final class AutomationAction {
+        @SerializedName("type")
         public String type;
+        @SerializedName("text")
         public String text;
+        @SerializedName("target")
         public String target = TARGET_CURRENT_DIALOG;
+        @SerializedName("dialogId")
         public Long dialogId;
+        @SerializedName("mark")
         public String mark;
+        @SerializedName("forwardFromMyName")
         public Boolean forwardFromMyName;
+        @SerializedName("hideCaption")
         public Boolean hideCaption;
+        @SerializedName("condition")
         public ArrayList<AutomationFilter> condition = new ArrayList<>();
+        @SerializedName("thenActions")
         public ArrayList<AutomationAction> thenActions = new ArrayList<>();
+        @SerializedName("elseActions")
         public ArrayList<AutomationAction> elseActions = new ArrayList<>();
     }
 

@@ -2960,6 +2960,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().addObserver(this, NotificationCenter.loadingMessagesFailed);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.invalidateMotionBackground);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.leleHideDeletedMessagesChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.didUpdateConnectionState);
         getNotificationCenter().addObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().addObserver(this, NotificationCenter.updateDefaultSendAsPeer);
@@ -3437,6 +3438,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().removeObserver(this, NotificationCenter.updatedChatRanks);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.invalidateMotionBackground);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.leleHideDeletedMessagesChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateConnectionState);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.updateDefaultSendAsPeer);
@@ -15823,6 +15825,15 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
+    private void reloadMessagesForDeletedVisibilityChange() {
+        if (!isNormalChatTimelineMode()) {
+            return;
+        }
+        resetForReload();
+        clearChatData(true);
+        firstLoadMessages();
+    }
+
     public void scrollToLastMessage(boolean skipSponsored, boolean top) {
         scrollToLastMessage(skipSponsored, top, null);
     }
@@ -20537,7 +20548,9 @@ public class ChatActivity extends BaseFragment implements
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
-        if (id == NotificationCenter.messagesDidLoad) {
+        if (id == NotificationCenter.leleHideDeletedMessagesChanged) {
+            reloadMessagesForDeletedVisibilityChange();
+        } else if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid != classGuid) {
                 return;
@@ -21116,6 +21129,9 @@ public class ChatActivity extends BaseFragment implements
                     continue;
                 }
                 if (obj.messageOwner.action instanceof TLRPC.TL_messageActionChannelMigrateFrom) {
+                    continue;
+                }
+                if (!shouldShowMessageInNormalTimeline(obj)) {
                     continue;
                 }
 
@@ -24809,6 +24825,31 @@ public class ChatActivity extends BaseFragment implements
     private Pattern sponsoredUrlPattern;
     private MessageObject botSponsoredMessage;
 
+    private boolean isNormalChatTimelineMode() {
+        return !isReport() && (chatMode == MODE_DEFAULT || chatMode == MODE_SAVED);
+    }
+
+    private boolean isLocallyDeletedMessage(MessageObject messageObject) {
+        return messageObject != null && (messageObject.deleted || messageObject.messageOwner != null && messageObject.messageOwner.deleted);
+    }
+
+    private boolean shouldShowMessageInNormalTimeline(MessageObject messageObject) {
+        return !isNormalChatTimelineMode() || !LeleConfig.hideDeletedMessages || !isLocallyDeletedMessage(messageObject);
+    }
+
+    private long getChannelIdForLoadIndex(int loadIndex) {
+        if (!ChatObject.isChannel(currentChat)) {
+            return 0;
+        }
+        return loadIndex == 0 ? -dialog_id : 0;
+    }
+
+    private void processHiddenDeletedReplacement(MessageObject messageObject, int loadIndex) {
+        ArrayList<Integer> ids = new ArrayList<>(1);
+        ids.add(messageObject.getId());
+        processDeletedMessages(ids, getChannelIdForLoadIndex(loadIndex), false, false);
+    }
+
     private boolean shouldBlockLocalChannelSponsoredMessages() {
         return LeleConfig.hideChannelAds && currentChat != null && ChatObject.isChannelAndNotMegaGroup(currentChat);
     }
@@ -25516,6 +25557,9 @@ public class ChatActivity extends BaseFragment implements
                 if (obj.messageOwner instanceof TLRPC.TL_messageEmpty) {
                     continue;
                 }
+                if (!shouldShowMessageInNormalTimeline(obj)) {
+                    continue;
+                }
                 if (!isTopic && threadMessageObject != null && obj.isReply() && !(obj.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage)) {
                     int mid = obj.getReplyAnyMsgId();
                     if (threadMessageObject.getId() == mid) {
@@ -25646,6 +25690,9 @@ public class ChatActivity extends BaseFragment implements
                     continue;
                 }
                 if (obj.messageOwner instanceof TLRPC.TL_messageEmpty) {
+                    continue;
+                }
+                if (!shouldShowMessageInNormalTimeline(obj)) {
                     continue;
                 }
                 if (threadMessageObject != null && threadMessageObject.messageOwner.replies != null && obj.isReply() && !(obj.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage)) {
@@ -26483,6 +26530,10 @@ public class ChatActivity extends BaseFragment implements
                 repliesMessagesDict.put(messageObject.getId(), messageObject);
             }
             if (old == null || remove && !ignoreDateCheckBeforeRemove && old.messageOwner.date != messageObject.messageOwner.date || messageObject.scheduled && chatMode != MODE_SCHEDULED) {
+                continue;
+            }
+            if (!shouldShowMessageInNormalTimeline(messageObject)) {
+                processHiddenDeletedReplacement(messageObject, loadIndex);
                 continue;
             }
             if (remove) {

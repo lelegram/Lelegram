@@ -1189,6 +1189,33 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         showDialog(builder.create());
     }
 
+    private void needShowLoginError(String title, TLRPC.TL_error error, TLObject request, Object... args) {
+        if (error == null) {
+            return;
+        }
+        if (error.code == -1000 || TextUtils.isEmpty(error.text)) {
+            StringBuilder builder = new StringBuilder(getString(R.string.ErrorOccurred))
+                .append('\n')
+                .append("REQUEST_FAILED (")
+                .append(error.code)
+                .append(')');
+            if (!TextUtils.isEmpty(error.text)) {
+                builder.append('\n').append(error.text);
+            } else {
+                builder.append('\n').append("The request was interrupted, blocked, or returned an empty error.");
+            }
+            needShowAlert(title, builder.toString());
+            return;
+        }
+        if (request != null) {
+            Dialog dialog = AlertsCreator.processError(currentAccount, error, this, request, args);
+            if (dialog != null) {
+                return;
+            }
+        }
+        needShowAlert(title, getString(R.string.ErrorOccurred) + "\n" + error.text);
+    }
+
     private void onFieldError(View view, boolean allowErrorSelection) {
         try {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
@@ -3251,8 +3278,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         fillNextCodeParams(params, (TLRPC.auth_SentCode) response);
                     }
                 } else {
-                    if (error.text != null) {
-                        if (error.text.contains("SESSION_PASSWORD_NEEDED")) {
+                    String errorText = error.text == null ? "" : error.text;
+                    if (errorText.contains("SESSION_PASSWORD_NEEDED")) {
                             TL_account.getPassword req2 = new TL_account.getPassword();
                             ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
                                 nextPressed = false;
@@ -3273,25 +3300,24 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                     needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), error1.text);
                                 }
                             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
-                        } else if (error.text.contains("PHONE_NUMBER_INVALID")) {
+                    } else if (errorText.contains("PHONE_NUMBER_INVALID")) {
                             needShowInvalidAlert(LoginActivity.this, phone, phoneInputData, false);
-                        } else if (error.text.contains("PHONE_PASSWORD_FLOOD")) {
+                    } else if (errorText.contains("PHONE_PASSWORD_FLOOD")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
-                        } else if (error.text.contains("PHONE_NUMBER_FLOOD")) {
+                    } else if (errorText.contains("PHONE_NUMBER_FLOOD")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("PhoneNumberFlood", R.string.PhoneNumberFlood));
-                        } else if (error.text.contains("PHONE_NUMBER_BANNED")) {
+                    } else if (errorText.contains("PHONE_NUMBER_BANNED")) {
                                 needShowInvalidAlert(LoginActivity.this, phone, phoneInputData, true);
-                        } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
+                    } else if (errorText.contains("PHONE_CODE_EMPTY") || errorText.contains("PHONE_CODE_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidCode));
-                        } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                    } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                             onBackPressed(true);
                             setPage(VIEW_PHONE_INPUT, true, null, true);
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("CodeExpired", R.string.CodeExpired));
-                        } else if (error.text.startsWith("FLOOD_WAIT")) {
+                    } else if (errorText.startsWith("FLOOD_WAIT")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
-                        } else if (error.code != -1000) {
-                            AlertsCreator.processError(currentAccount, error, LoginActivity.this, req, phoneInputData.phoneNumber);
-                        }
+                    } else {
+                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req, phoneInputData.phoneNumber);
                     }
                 }
                 if (!isRequestingFirebaseSms) {
@@ -4247,20 +4273,19 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     }
                     fillNextCodeParams(nextCodeParams, nextCodeAuth);
                 } else {
-                    if (error.text != null) {
-                        if (error.text.contains("PHONE_NUMBER_INVALID")) {
+                    String errorText = error.text == null ? "" : error.text;
+                    if (errorText.contains("PHONE_NUMBER_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidPhoneNumber));
-                        } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
+                    } else if (errorText.contains("PHONE_CODE_EMPTY") || errorText.contains("PHONE_CODE_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidCode));
-                        } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                    } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                             onBackPressed(true);
                             setPage(VIEW_PHONE_INPUT, true, null, true);
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.CodeExpired));
-                        } else if (error.text.startsWith("FLOOD_WAIT")) {
+                    } else if (errorText.startsWith("FLOOD_WAIT")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.FloodWait));
-                        } else if (error.code != -1000) {
-                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.ErrorOccurred) + "\n" + error.text);
-                        }
+                    } else {
+                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                     }
                 }
                 tryHideProgress(false);
@@ -6180,12 +6205,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         params.putString("email", emailVerifiedLogin.email);
                         fillNextCodeParams(params, emailVerifiedLogin.sent_code);
                     } else if (error != null) {
-                        if (error.text.contains("EMAIL_NOT_ALLOWED")) {
+                        String errorText = error.text == null ? "" : error.text;
+                        if (errorText.contains("EMAIL_NOT_ALLOWED")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailNotAllowed));
-                        } else if (error.text.contains("EMAIL_TOKEN_INVALID")) {
+                        } else if (errorText.contains("EMAIL_TOKEN_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailTokenInvalid));
-                        } else if (error.code != -1000) {
-                            AlertsCreator.processError(currentAccount, error, LoginActivity.this, verifyEmail);
+                        } else {
+                            needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, verifyEmail);
                         }
                     }
                 }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
@@ -6216,25 +6242,26 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (response instanceof TL_account.sentEmailCode) {
                     TL_account.sentEmailCode emailCode = (TL_account.sentEmailCode) response;
                     fillNextCodeParams(params, emailCode);
-                } else if (error.text != null) {
-                    if (error.text.contains("EMAIL_INVALID")) {
+                } else {
+                    String errorText = error.text == null ? "" : error.text;
+                    if (errorText.contains("EMAIL_INVALID")) {
                         onPasscodeError(false);
-                    } else if (error.text.contains("EMAIL_NOT_ALLOWED")) {
+                    } else if (errorText.contains("EMAIL_NOT_ALLOWED")) {
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailNotAllowed));
-                    } else if (error.text.contains("PHONE_PASSWORD_FLOOD")) {
+                    } else if (errorText.contains("PHONE_PASSWORD_FLOOD")) {
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
-                    } else if (error.text.contains("PHONE_NUMBER_FLOOD")) {
+                    } else if (errorText.contains("PHONE_NUMBER_FLOOD")) {
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("PhoneNumberFlood", R.string.PhoneNumberFlood));
-                    } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
+                    } else if (errorText.contains("PHONE_CODE_EMPTY") || errorText.contains("PHONE_CODE_INVALID")) {
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("InvalidCode", R.string.InvalidCode));
-                    } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                    } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                         onBackPressed(true);
                         setPage(VIEW_PHONE_INPUT, true, null, true);
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("CodeExpired", R.string.CodeExpired));
-                    } else if (error.text.startsWith("FLOOD_WAIT")) {
+                    } else if (errorText.startsWith("FLOOD_WAIT")) {
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
-                    } else if (error.code != -1000) {
-                        AlertsCreator.processError(currentAccount, error, LoginActivity.this, req, requestPhone);
+                    } else {
+                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req, requestPhone);
                     }
                 }
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
@@ -6461,13 +6488,14 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                         resetRequestPending = true;
                                     }
                                     fillNextCodeParams(params, sentCode);
-                                } else if (error != null && error.text != null) {
-                                    if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                                } else if (error != null) {
+                                    String errorText = error.text == null ? "" : error.text;
+                                    if (errorText.contains("PHONE_CODE_EXPIRED")) {
                                         onBackPressed(true);
                                         setPage(VIEW_PHONE_INPUT, true, null, true);
                                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("CodeExpired", R.string.CodeExpired));
                                     } else {
-                                        AlertsCreator.processError(currentAccount, error, LoginActivity.this, req);
+                                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                                     }
                                 }
                             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
@@ -6520,8 +6548,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         if (response instanceof TLRPC.TL_auth_sentCode) {
                             TLRPC.TL_auth_sentCode sentCode = (TLRPC.TL_auth_sentCode) response;
                             fillNextCodeParams(params, sentCode);
-                        } else if (error != null && error.text != null) {
-                            AlertsCreator.processError(currentAccount, error, LoginActivity.this, req);
+                        } else if (error != null) {
+                            needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                         }
                     });
                 }, ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
@@ -6592,19 +6620,20 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (response instanceof TLRPC.TL_auth_sentCode) {
                     TLRPC.TL_auth_sentCode sentCode = (TLRPC.TL_auth_sentCode) response;
                     fillNextCodeParams(params, sentCode);
-                } else if (error != null && error.text != null) {
-                    if (error.text.contains("TASK_ALREADY_EXISTS")) {
+                } else if (error != null) {
+                    String errorText = error.text == null ? "" : error.text;
+                    if (errorText.contains("TASK_ALREADY_EXISTS")) {
                         new AlertDialog.Builder(getContext())
                                 .setTitle(getString(R.string.LoginEmailResetPremiumRequiredTitle))
                                 .setMessage(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.LoginEmailResetPremiumRequiredMessage, LocaleController.addNbsp(PhoneFormat.getInstance().format("+" + requestPhone)))))
                                 .setPositiveButton(getString(R.string.OK), null)
                                 .show();
-                    } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                    } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                         onBackPressed(true);
                         setPage(VIEW_PHONE_INPUT, true, null, true);
                         needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("CodeExpired", R.string.CodeExpired));
                     } else {
-                        AlertsCreator.processError(currentAccount, error, LoginActivity.this, req);
+                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                     }
                 }
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
@@ -8542,14 +8571,20 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                         onAuthSuccess((TLRPC.TL_auth_authorization) ((TLRPC.TL_auth_loginTokenSuccess) response1).authorization);
                                     }, 150);
                                 }
-                            } else if (error1.text != null) {
+                            } else if (!TextUtils.isEmpty(error1.text)) {
                                 handleError(error1.text);
+                            } else {
+                                needShowLoginError(LocaleController.getString(R.string.AppName), error1, request);
                             }
                         }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagTryDifferentDc | ConnectionsManager.RequestFlagEnableUnauthorized);
                     }
-                } else if (error.text != null) {
+                } else if (error != null) {
                     removeObserver();
-                    handleError(error.text);
+                    if (!TextUtils.isEmpty(error.text)) {
+                        handleError(error.text);
+                    } else {
+                        needShowLoginError(LocaleController.getString(R.string.AppName), error, req);
+                    }
                 }
 
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin | ConnectionsManager.RequestFlagTryDifferentDc | ConnectionsManager.RequestFlagEnableUnauthorized);
@@ -9370,21 +9405,22 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                             nextCodeParams = params;
                             nextCodeAuth = (TLRPC.TL_auth_sentCode) response;
                             fillNextCodeParams(nextCodeParams, nextCodeAuth);
-                        } else if (error != null && error.text != null) {
-                            if (error.text.contains("PHONE_NUMBER_INVALID")) {
+                        } else if (error != null) {
+                            String errorText = error.text == null ? "" : error.text;
+                            if (errorText.contains("PHONE_NUMBER_INVALID")) {
                                 needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidPhoneNumber));
-                            } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
+                            } else if (errorText.contains("PHONE_CODE_EMPTY") || errorText.contains("PHONE_CODE_INVALID")) {
                                 needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidCode));
-                            } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                            } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                                 onBackPressed(true);
                                 setPage(VIEW_PHONE_INPUT, true, null, true);
                                 needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.CodeExpired));
-                            } else if (error.text.startsWith("FLOOD_WAIT")) {
+                            } else if (errorText.startsWith("FLOOD_WAIT")) {
                                 needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.FloodWait));
-                            } else if (error.code != -1000) {
-                                needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.ErrorOccurred) + "\n" + error.text);
+                            } else {
+                                needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                             }
-                            lastError = error.text;
+                            lastError = errorText;
                         }
                     }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
                 } else if (nextType == AUTH_TYPE_FLASH_CALL) {
@@ -9759,20 +9795,19 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (error == null) {
                     fillNextCodeParams(params, (TLRPC.TL_auth_sentCode) response);
                 } else {
-                    if (error.text != null) {
-                        if (error.text.contains("PHONE_NUMBER_INVALID")) {
+                    String errorText = error.text == null ? "" : error.text;
+                    if (errorText.contains("PHONE_NUMBER_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidPhoneNumber));
-                        } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
+                    } else if (errorText.contains("PHONE_CODE_EMPTY") || errorText.contains("PHONE_CODE_INVALID")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.InvalidCode));
-                        } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                    } else if (errorText.contains("PHONE_CODE_EXPIRED")) {
                             onBackPressed(true);
                             setPage(VIEW_PHONE_INPUT, true, null, true);
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.CodeExpired));
-                        } else if (error.text.startsWith("FLOOD_WAIT")) {
+                    } else if (errorText.startsWith("FLOOD_WAIT")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.FloodWait));
-                        } else if (error.code != -1000) {
-                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.ErrorOccurred) + "\n" + error.text);
-                        }
+                    } else {
+                        needShowLoginError(getString(R.string.RestorePasswordNoEmailTitle), error, req);
                     }
                 }
                 needHideProgress(false);

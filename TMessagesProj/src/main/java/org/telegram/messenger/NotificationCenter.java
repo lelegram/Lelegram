@@ -311,6 +311,7 @@ public class NotificationCenter {
     public static final int locationPermissionGranted = totalEvents++;
     public static final int locationPermissionDenied = totalEvents++;
     public static final int reloadInterface = totalEvents++;
+    public static final int leleHideDeletedMessagesChanged = totalEvents++;
     public static final int suggestedLangpack = totalEvents++;
     public static final int didSetNewWallpapper = totalEvents++;
     public static final int proxySettingsChanged = totalEvents++;
