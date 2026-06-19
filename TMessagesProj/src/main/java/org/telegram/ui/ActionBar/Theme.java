@@ -15,7 +15,6 @@ import static org.telegram.messenger.LocaleController.getString;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
@@ -93,6 +92,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StartupThemeHelper;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
@@ -3019,7 +3019,7 @@ public class Theme {
     public static final int AUTO_NIGHT_TYPE_SCHEDULED = 1;
     public static final int AUTO_NIGHT_TYPE_AUTOMATIC = 2;
     public static final int AUTO_NIGHT_TYPE_SYSTEM = 3;
-    public static final int STARTUP_NIGHT_BACKGROUND_COLOR = 0xff1f2732;
+    public static final int STARTUP_NIGHT_BACKGROUND_COLOR = StartupThemeHelper.STARTUP_NIGHT_BACKGROUND_COLOR;
 
     private static final int LIGHT_SENSOR_THEME_SWITCH_DELAY = 1800;
     private static final int LIGHT_SENSOR_THEME_SWITCH_NEAR_DELAY = 12000;
@@ -5187,49 +5187,15 @@ public class Theme {
     }
 
     public static boolean shouldUseDarkStartupBackground(Context context) {
-        SharedPreferences preferences = getMainConfigPreferences(context);
-        if (preferences == null) {
-            return selectedAutoNightType == AUTO_NIGHT_TYPE_AUTOMATIC && autoNightLastSwitchToNight;
-        }
-        return preferences.getInt("selectedAutoNightType", Build.VERSION.SDK_INT >= 29 ? AUTO_NIGHT_TYPE_SYSTEM : AUTO_NIGHT_TYPE_NONE) == AUTO_NIGHT_TYPE_AUTOMATIC
-                && preferences.getBoolean("autoNightLastSwitchToNight", false);
+        return context != null ? StartupThemeHelper.shouldUseDarkStartupBackground(context) : selectedAutoNightType == AUTO_NIGHT_TYPE_AUTOMATIC && autoNightLastSwitchToNight;
     }
 
     public static void syncApplicationNightModeForStartup() {
-        syncApplicationNightModeForStartup(ApplicationLoader.applicationContext);
+        StartupThemeHelper.syncApplicationNightModeForStartup();
     }
 
     public static void syncApplicationNightModeForStartup(Context context) {
-        if (Build.VERSION.SDK_INT < 31 || context == null) {
-            return;
-        }
-        SharedPreferences preferences = getMainConfigPreferences(context);
-        int autoNightType = preferences != null
-                ? preferences.getInt("selectedAutoNightType", Build.VERSION.SDK_INT >= 29 ? AUTO_NIGHT_TYPE_SYSTEM : AUTO_NIGHT_TYPE_NONE)
-                : selectedAutoNightType;
-        boolean automaticNight = autoNightType == AUTO_NIGHT_TYPE_AUTOMATIC && (preferences != null
-                ? preferences.getBoolean("autoNightLastSwitchToNight", false)
-                : autoNightLastSwitchToNight);
-        int mode;
-        if (autoNightType == AUTO_NIGHT_TYPE_AUTOMATIC) {
-            mode = automaticNight ? UiModeManager.MODE_NIGHT_YES : UiModeManager.MODE_NIGHT_NO;
-        } else if (autoNightType == AUTO_NIGHT_TYPE_SYSTEM) {
-            mode = UiModeManager.MODE_NIGHT_AUTO;
-        } else {
-            mode = UiModeManager.MODE_NIGHT_NO;
-        }
-        UiModeManager uiModeManager = (UiModeManager) context.getSystemService(Context.UI_MODE_SERVICE);
-        if (uiModeManager != null) {
-            uiModeManager.setApplicationNightMode(mode);
-        }
-    }
-
-    private static SharedPreferences getMainConfigPreferences(Context context) {
-        Context preferencesContext = context != null ? context : ApplicationLoader.applicationContext;
-        if (preferencesContext == null) {
-            return null;
-        }
-        return preferencesContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
+        StartupThemeHelper.syncApplicationNightModeForStartup(context);
     }
 
     @SuppressLint("PrivateApi")

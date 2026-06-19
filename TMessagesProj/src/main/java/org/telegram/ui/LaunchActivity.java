@@ -132,6 +132,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SharedPrefsHelper;
+import org.telegram.messenger.StartupThemeHelper;
 import org.telegram.messenger.TopicsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -396,13 +397,13 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     // private RefreshRateController refreshRateController;
 
     private boolean applyStartupBackground() {
-        if (!Theme.shouldUseDarkStartupBackground(this)) {
+        if (!StartupThemeHelper.shouldUseDarkStartupBackground(this)) {
             return false;
         }
         Window window = getWindow();
-        window.setBackgroundDrawable(new ColorDrawable(Theme.STARTUP_NIGHT_BACKGROUND_COLOR));
+        window.setBackgroundDrawable(new ColorDrawable(StartupThemeHelper.STARTUP_NIGHT_BACKGROUND_COLOR));
         if (Build.VERSION.SDK_INT >= 21) {
-            window.setStatusBarColor(Theme.STARTUP_NIGHT_BACKGROUND_COLOR);
+            window.setStatusBarColor(StartupThemeHelper.STARTUP_NIGHT_BACKGROUND_COLOR);
             window.setNavigationBarColor(Color.BLACK);
         }
         if (Build.VERSION.SDK_INT >= 23) {
@@ -461,7 +462,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
         }
         if (useDarkStartupBackground) {
-            getWindow().setBackgroundDrawable(new ColorDrawable(Theme.STARTUP_NIGHT_BACKGROUND_COLOR));
+            getWindow().setBackgroundDrawable(new ColorDrawable(StartupThemeHelper.STARTUP_NIGHT_BACKGROUND_COLOR));
         } else {
             getWindow().setBackgroundDrawableResource(R.drawable.transparent);
         }
