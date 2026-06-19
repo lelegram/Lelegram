@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Скрыть заблокированных пользователей</string>
     <string name="Connection">Соединение</string>
     <string name="Chat">Чат</string>
+    <string name="KeepDeletedMessages">Сохранять удалённые сообщения</string>
+    <string name="KeepDeletedMessagesDesc">Сохраняет отозванные сообщения локально, показывает уведомления об отзыве в чатах и открывает детали при нажатии на уведомление.</string>
+    <string name="DeletedFilter">Удалено</string>
+    <string name="DeletedMark">Удалено</string>
+    <string name="RecalledOneMessage">%1$s отозвал(а) сообщение</string>
+    <string name="RecalledMultipleMessages">%1$s отозвал(а) %2$d сообщений</string>
+    <string name="RecalledMessagesTitle">Отозванные сообщения</string>
+    <string name="RecalledMediaUnavailable">медиа недоступно</string>
+    <string name="RecalledUnsupportedMessage">Неподдерживаемое отозванное сообщение</string>
     <string name="NameOrder">Сортировка имён</string>
     <string name="FirstLast">Имя Фамилия</string>
     <string name="LastFirst">Фамилия Имя</string>

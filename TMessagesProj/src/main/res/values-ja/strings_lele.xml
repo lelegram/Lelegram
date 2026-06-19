@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">ブロックしたユーザーからのメッセージを非表示</string>
     <string name="Connection">接続</string>
     <string name="Chat">チャット</string>
+    <string name="KeepDeletedMessages">削除されたメッセージを保持</string>
+    <string name="KeepDeletedMessagesDesc">取り消されたメッセージをローカルに保存し、チャットに取り消し通知を表示し、通知をタップすると詳細を開きます。</string>
+    <string name="DeletedFilter">削除済み</string>
+    <string name="DeletedMark">削除済み</string>
+    <string name="RecalledOneMessage">%1$sがメッセージを取り消しました</string>
+    <string name="RecalledMultipleMessages">%1$sが%2$d件のメッセージを取り消しました</string>
+    <string name="RecalledMessagesTitle">取り消されたメッセージ</string>
+    <string name="RecalledMediaUnavailable">メディアを利用できません</string>
+    <string name="RecalledUnsupportedMessage">対応していない取り消しメッセージ</string>
     <string name="NameOrder">表示する名前の順序</string>
     <string name="FirstLast">名前 姓氏</string>
     <string name="LastFirst">姓氏 名前</string>

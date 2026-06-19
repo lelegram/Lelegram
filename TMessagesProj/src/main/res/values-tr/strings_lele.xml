@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Engellenen kullanıcıdan gelen mesajları gizle</string>
     <string name="Connection">Bağlantı</string>
     <string name="Chat">Sohbet</string>
+    <string name="KeepDeletedMessages">Silinen mesajları sakla</string>
+    <string name="KeepDeletedMessagesDesc">Geri çekilen mesajları yerel olarak saklar, sohbetlerde geri çekme bildirimleri gösterir ve bildirime dokununca ayrıntıları açar.</string>
+    <string name="DeletedFilter">Silindi</string>
+    <string name="DeletedMark">Silindi</string>
+    <string name="RecalledOneMessage">%1$s bir mesajı geri çekti</string>
+    <string name="RecalledMultipleMessages">%1$s %2$d mesajı geri çekti</string>
+    <string name="RecalledMessagesTitle">Geri çekilen mesajlar</string>
+    <string name="RecalledMediaUnavailable">medya kullanılamıyor</string>
+    <string name="RecalledUnsupportedMessage">Desteklenmeyen geri çekilmiş mesaj</string>
     <string name="NameOrder">İsim sırası</string>
     <string name="FirstLast">Ad Soyad</string>
     <string name="LastFirst">Soyad Ad</string>

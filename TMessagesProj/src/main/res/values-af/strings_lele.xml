@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Accessibility -->
+    <string name="KeepDeletedMessages">Hou geskrapte boodskappe</string>
+    <string name="KeepDeletedMessagesDesc">Bewaar teruggetrekte boodskappe plaaslik, wys terugtrek-kennisgewings in kletse, en maak besonderhede oop wanneer jy op die kennisgewing tik.</string>
+    <string name="DeletedFilter">Geskrap</string>
+    <string name="DeletedMark">Geskrap</string>
+    <string name="RecalledOneMessage">%1$s het een boodskap teruggetrek</string>
+    <string name="RecalledMultipleMessages">%1$s het %2$d boodskappe teruggetrek</string>
+    <string name="RecalledMessagesTitle">Teruggetrekte boodskappe</string>
+    <string name="RecalledMediaUnavailable">media nie beskikbaar nie</string>
+    <string name="RecalledUnsupportedMessage">Teruggetrekte boodskap word nie ondersteun nie</string>
 </resources>

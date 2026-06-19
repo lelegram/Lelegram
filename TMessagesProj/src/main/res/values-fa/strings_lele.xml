@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">پنهان‌سازی پیام‌های کاربر مسدود شده</string>
     <string name="Connection">ارتباط</string>
     <string name="Chat">گفتگو</string>
+    <string name="KeepDeletedMessages">نگه‌داشتن پیام‌های حذف‌شده</string>
+    <string name="KeepDeletedMessagesDesc">پیام‌های پس‌گرفته‌شده را به‌صورت محلی نگه می‌دارد، اعلان پس‌گرفتن را در گفتگوها نشان می‌دهد و با لمس اعلان، جزئیات را باز می‌کند.</string>
+    <string name="DeletedFilter">حذف‌شده</string>
+    <string name="DeletedMark">حذف‌شده</string>
+    <string name="RecalledOneMessage">%1$s پیامی را پس گرفت</string>
+    <string name="RecalledMultipleMessages">%1$s %2$d پیام را پس گرفت</string>
+    <string name="RecalledMessagesTitle">پیام‌های پس‌گرفته‌شده</string>
+    <string name="RecalledMediaUnavailable">رسانه در دسترس نیست</string>
+    <string name="RecalledUnsupportedMessage">پیام پس‌گرفته‌شده پشتیبانی نمی‌شود</string>
     <string name="NameOrder">ترتیب نام</string>
     <string name="FirstLast">نام و نام خانوادگی</string>
     <string name="LastFirst">نام خانوادگی و نام</string>

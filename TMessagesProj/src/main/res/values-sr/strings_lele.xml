@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Сакриј поруке од блокираног корисника</string>
     <string name="Connection">Веза</string>
     <string name="Chat">Ћаскање</string>
+    <string name="KeepDeletedMessages">Чувај обрисане поруке</string>
+    <string name="KeepDeletedMessagesDesc">Локално чува опозване поруке, приказује обавештења о опозиву у ћаскањима и отвара детаље када додирнете обавештење.</string>
+    <string name="DeletedFilter">Обрисано</string>
+    <string name="DeletedMark">Обрисано</string>
+    <string name="RecalledOneMessage">%1$s је опозвао/ла поруку</string>
+    <string name="RecalledMultipleMessages">%1$s је опозвао/ла %2$d порука</string>
+    <string name="RecalledMessagesTitle">Опозване поруке</string>
+    <string name="RecalledMediaUnavailable">медији нису доступни</string>
+    <string name="RecalledUnsupportedMessage">Опозвана порука није подржана</string>
     <string name="NameOrder">Сортирање имена</string>
     <string name="FirstLast">Име Презиме</string>
     <string name="LastFirst">Презиме Име</string>

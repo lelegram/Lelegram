@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Ukryj wiadomości od zablokowanego użytkownika</string>
     <string name="Connection">Połączenie</string>
     <string name="Chat">Czat</string>
+    <string name="KeepDeletedMessages">Zachowuj usunięte wiadomości</string>
+    <string name="KeepDeletedMessagesDesc">Zachowuje lokalnie wycofane wiadomości, pokazuje powiadomienia o wycofaniu w czatach i otwiera szczegóły po dotknięciu powiadomienia.</string>
+    <string name="DeletedFilter">Usunięto</string>
+    <string name="DeletedMark">Usunięto</string>
+    <string name="RecalledOneMessage">%1$s wycofał(a) wiadomość</string>
+    <string name="RecalledMultipleMessages">%1$s wycofał(a) %2$d wiadomości</string>
+    <string name="RecalledMessagesTitle">Wycofane wiadomości</string>
+    <string name="RecalledMediaUnavailable">media niedostępne</string>
+    <string name="RecalledUnsupportedMessage">Nieobsługiwana wycofana wiadomość</string>
     <string name="NameOrder">Format nazwy</string>
     <string name="FirstLast">Imię, Nazwisko</string>
     <string name="LastFirst">Nazwisko, Imię</string>

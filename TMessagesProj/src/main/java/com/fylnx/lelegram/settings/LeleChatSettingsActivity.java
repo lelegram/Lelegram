@@ -54,7 +54,6 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
 
     private final int ignoreBlockedRow = rowId++;
     private final int keepDeletedMessagesRow = rowId++;
-    private final int hideDeletedMessagesRow = rowId++;
     private final int forwardDeletedMessagesRow = rowId++;
     private final int allowProtectedContentActionsRow = rowId++;
     private final int quickForwardRow = rowId++;
@@ -159,7 +158,6 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
         items.add(UItem.asHeader(LocaleController.getString(R.string.Chat)));
         items.add(UItem.asCheck(ignoreBlockedRow, LocaleController.getString(R.string.IgnoreBlocked), LocaleController.getString(R.string.IgnoreBlockedAbout)).slug("ignoreBlocked").setChecked(LeleConfig.ignoreBlocked));
         items.add(UItem.asCheck(keepDeletedMessagesRow, LocaleController.getString(R.string.KeepDeletedMessages), LocaleController.getString(R.string.KeepDeletedMessagesDesc)).slug("keepDeletedMessages").setChecked(LeleConfig.keepDeletedMessages));
-        items.add(UItem.asCheck(hideDeletedMessagesRow, LocaleController.getString(R.string.HideDeletedMessages), LocaleController.getString(R.string.HideDeletedMessagesDesc)).slug("hideDeletedMessages").setChecked(LeleConfig.hideDeletedMessages));
         items.add(UItem.asCheck(forwardDeletedMessagesRow, LocaleController.getString(R.string.ForwardDeletedMessages), LocaleController.getString(R.string.ForwardDeletedMessagesDesc)).slug("forwardDeletedMessages").setChecked(LeleConfig.forwardDeletedMessages));
         items.add(UItem.asCheck(allowProtectedContentActionsRow, LocaleController.getString(R.string.AllowProtectedContentActions), LocaleController.getString(R.string.AllowProtectedContentActionsDesc)).slug("allowProtectedContentActions").setChecked(LeleConfig.allowProtectedContentActions));
         items.add(UItem.asCheck(quickForwardRow, LocaleController.getString(R.string.QuickForward)).slug("quickForward").setChecked(LeleConfig.quickForward));
@@ -237,11 +235,6 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
             LeleConfig.toggleKeepDeletedMessages();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(LeleConfig.keepDeletedMessages);
-            }
-        } else if (id == hideDeletedMessagesRow) {
-            LeleConfig.toggleHideDeletedMessages();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(LeleConfig.hideDeletedMessages);
             }
         } else if (id == forwardDeletedMessagesRow) {
             LeleConfig.toggleForwardDeletedMessages();

@@ -8,6 +8,15 @@
     <string name="IgnoreBlocked">Slēpt ziņojumus no bloķēta lietotāja</string>
     <string name="Connection">Savienojums</string>
     <string name="Chat">Čats</string>
+    <string name="KeepDeletedMessages">Saglabāt dzēstos ziņojumus</string>
+    <string name="KeepDeletedMessagesDesc">Lokāli saglabā atsauktos ziņojumus, rāda atsaukšanas paziņojumus tērzētavās un atver detaļas, pieskaroties paziņojumam.</string>
+    <string name="DeletedFilter">Dzēsts</string>
+    <string name="DeletedMark">Dzēsts</string>
+    <string name="RecalledOneMessage">%1$s atsauca ziņojumu</string>
+    <string name="RecalledMultipleMessages">%1$s atsauca %2$d ziņojumus</string>
+    <string name="RecalledMessagesTitle">Atsauktie ziņojumi</string>
+    <string name="RecalledMediaUnavailable">multivide nav pieejama</string>
+    <string name="RecalledUnsupportedMessage">Neatbalstīts atsauktais ziņojums</string>
     <string name="NameOrder">Vārda secība</string>
     <string name="FirstLast">Pirmais Pēdējais</string>
     <string name="LastFirst">Pēdējais Pirmais</string>

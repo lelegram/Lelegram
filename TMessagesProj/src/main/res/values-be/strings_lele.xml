@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Схаваць паведамленні ад заблакіраваных карыстальнікаў</string>
     <string name="Connection">Злучэнне</string>
     <string name="Chat">Чат</string>
+    <string name="KeepDeletedMessages">Захоўваць выдаленыя паведамленні</string>
+    <string name="KeepDeletedMessagesDesc">Захоўваць адкліканыя паведамленні лакальна, паказваць падказкі пра адкліканне ў чатах і адкрываць падрабязнасці пры націску на падказку.</string>
+    <string name="DeletedFilter">Выдалена</string>
+    <string name="DeletedMark">Выдалена</string>
+    <string name="RecalledOneMessage">%1$s адклікаў паведамленне</string>
+    <string name="RecalledMultipleMessages">%1$s адклікаў %2$d паведамленняў</string>
+    <string name="RecalledMessagesTitle">Адкліканыя паведамленні</string>
+    <string name="RecalledMediaUnavailable">медыя недаступнае</string>
+    <string name="RecalledUnsupportedMessage">Адкліканае паведамленне не падтрымліваецца</string>
     <string name="NameOrder">Сартаванне імён</string>
     <string name="FirstLast">Імя Прозвішча</string>
     <string name="LastFirst">Прозвішча Імя</string>

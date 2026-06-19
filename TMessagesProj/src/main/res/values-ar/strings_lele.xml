@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">إخفاء الرسائل من المستخدم المحظور</string>
     <string name="Connection">اتصال</string>
     <string name="Chat">مُحادثة</string>
+    <string name="KeepDeletedMessages">الاحتفاظ بالرسائل المحذوفة</string>
+    <string name="KeepDeletedMessagesDesc">احفظ الرسائل المسترجعة محليًا، واعرض تنبيهات الاسترجاع في المحادثات، وافتح التفاصيل عند الضغط على التنبيه.</string>
+    <string name="DeletedFilter">محذوفة</string>
+    <string name="DeletedMark">محذوفة</string>
+    <string name="RecalledOneMessage">%1$s سحب رسالة</string>
+    <string name="RecalledMultipleMessages">%1$s سحب %2$d رسائل</string>
+    <string name="RecalledMessagesTitle">الرسائل المسترجعة</string>
+    <string name="RecalledMediaUnavailable">الوسائط غير متاحة</string>
+    <string name="RecalledUnsupportedMessage">رسالة مسترجعة غير مدعومة</string>
     <string name="NameOrder">ترتيبُ الاسمِ</string>
     <string name="FirstLast">الأول ثم الآخر</string>
     <string name="LastFirst">الآخر ثم الأول</string>

@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Nascondi i messaggi degli utenti bloccati</string>
     <string name="Connection">Connessione</string>
     <string name="Chat">Chat</string>
+    <string name="KeepDeletedMessages">Conserva messaggi eliminati</string>
+    <string name="KeepDeletedMessagesDesc">Conserva localmente i messaggi ritirati, mostra avvisi di ritiro nelle chat e apre i dettagli quando tocchi un avviso.</string>
+    <string name="DeletedFilter">Eliminato</string>
+    <string name="DeletedMark">Eliminato</string>
+    <string name="RecalledOneMessage">%1$s ha ritirato un messaggio</string>
+    <string name="RecalledMultipleMessages">%1$s ha ritirato %2$d messaggi</string>
+    <string name="RecalledMessagesTitle">Messaggi ritirati</string>
+    <string name="RecalledMediaUnavailable">media non disponibile</string>
+    <string name="RecalledUnsupportedMessage">Messaggio ritirato non supportato</string>
     <string name="NameOrder">Ordinamento dei nomi</string>
     <string name="FirstLast">Dal primo all\'ultimo</string>
     <string name="LastFirst">Dall\'ultimo al primo</string>

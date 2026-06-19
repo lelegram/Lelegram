@@ -10,6 +10,15 @@
     <string name="IgnoreBlocked">Verberg berichten van geblokkeerde gebruikers</string>
     <string name="Connection">Verbinding</string>
     <string name="Chat">Chat</string>
+    <string name="KeepDeletedMessages">Verwijderde berichten bewaren</string>
+    <string name="KeepDeletedMessagesDesc">Bewaar ingetrokken berichten lokaal, toon intrekkingsmeldingen in chats en open details wanneer je op een melding tikt.</string>
+    <string name="DeletedFilter">Verwijderd</string>
+    <string name="DeletedMark">Verwijderd</string>
+    <string name="RecalledOneMessage">%1$s heeft een bericht ingetrokken</string>
+    <string name="RecalledMultipleMessages">%1$s heeft %2$d berichten ingetrokken</string>
+    <string name="RecalledMessagesTitle">Ingetrokken berichten</string>
+    <string name="RecalledMediaUnavailable">media niet beschikbaar</string>
+    <string name="RecalledUnsupportedMessage">Niet-ondersteund ingetrokken bericht</string>
     <string name="NameOrder">Naam volgorde</string>
     <string name="FirstLast">Voornaam Achternaam</string>
     <string name="LastFirst">Achternaam Voornaam</string>

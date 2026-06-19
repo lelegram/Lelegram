@@ -229,6 +229,7 @@ public class MessageObject {
     public String monthKey;
     public boolean deleted;
     public boolean deletedByThanos;
+    public ArrayList<MessageObject> leleRecalledMessages;
     public float audioProgress;
     public float forceSeekTo = -1;
     public int audioProgressMs;
@@ -10047,6 +10048,10 @@ public class MessageObject {
             messageBlocked = MessageFilterHelper.shouldBlockMessage(this);
         }
         return messageBlocked;
+    }
+
+    public boolean isLeleRecallPrompt() {
+        return leleRecalledMessages != null && !leleRecalledMessages.isEmpty();
     }
 
     public long getSavedDialogId() {

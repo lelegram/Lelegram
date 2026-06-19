@@ -30,6 +30,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BaseController;
 import org.telegram.messenger.ChatObject;
+import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -40,6 +41,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -159,6 +161,214 @@ public class MessageHelper extends BaseController {
         spannableStringBuilder.append(deletedMark);
         spannableStringBuilder.setSpan(new TypefaceSpan(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MEDIUM_ITALIC)), deletedStart, spannableStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return spannableStringBuilder;
+    }
+
+    public static MessageObject createRecallPromptMessageObject(int accountNum, ArrayList<MessageObject> recalledMessages) {
+        if (recalledMessages == null || recalledMessages.isEmpty()) {
+            return null;
+        }
+        MessageObject anchor = recalledMessages.get(0);
+        TLRPC.TL_messageService message = new TLRPC.TL_messageService();
+        message.id = anchor.getId();
+        message.local_id = anchor.messageOwner.local_id;
+        message.dialog_id = anchor.getDialogId();
+        message.peer_id = anchor.messageOwner.peer_id;
+        message.from_id = anchor.messageOwner.from_id;
+        message.date = anchor.messageOwner.date;
+        message.out = anchor.messageOwner.out;
+        message.post = anchor.messageOwner.post;
+        TLRPC.TL_messageActionCustomAction action = new TLRPC.TL_messageActionCustomAction();
+        action.message = createRecallPromptText(accountNum, recalledMessages).toString();
+        message.action = action;
+        MessageObject prompt = new MessageObject(accountNum, message, false, false);
+        prompt.type = MessageObject.TYPE_DATE;
+        prompt.contentType = 1;
+        prompt.isDateObject = false;
+        prompt.leleRecalledMessages = new ArrayList<>(recalledMessages);
+        prompt.stableId = anchor.stableId;
+        return prompt;
+    }
+
+    public static void updateRecallPromptMessageObject(MessageObject prompt, int accountNum, ArrayList<MessageObject> recalledMessages) {
+        if (prompt == null || recalledMessages == null || recalledMessages.isEmpty()) {
+            return;
+        }
+        prompt.leleRecalledMessages = new ArrayList<>(recalledMessages);
+        MessageObject anchor = recalledMessages.get(0);
+        prompt.messageOwner.id = anchor.getId();
+        prompt.messageOwner.local_id = anchor.messageOwner.local_id;
+        prompt.messageOwner.dialog_id = anchor.getDialogId();
+        prompt.messageOwner.peer_id = anchor.messageOwner.peer_id;
+        prompt.messageOwner.from_id = anchor.messageOwner.from_id;
+        prompt.messageOwner.date = anchor.messageOwner.date;
+        prompt.messageOwner.out = anchor.messageOwner.out;
+        prompt.messageOwner.post = anchor.messageOwner.post;
+        if (!(prompt.messageOwner.action instanceof TLRPC.TL_messageActionCustomAction)) {
+            prompt.messageOwner.action = new TLRPC.TL_messageActionCustomAction();
+        }
+        prompt.messageOwner.action.message = createRecallPromptText(accountNum, recalledMessages).toString();
+        prompt.messageText = prompt.messageOwner.action.message;
+        prompt.deleted = false;
+        prompt.messageOwner.deleted = false;
+        prompt.type = MessageObject.TYPE_DATE;
+        prompt.contentType = 1;
+        prompt.isDateObject = false;
+    }
+
+    public static CharSequence createRecallPromptText(int accountNum, ArrayList<MessageObject> recalledMessages) {
+        MessageObject anchor = recalledMessages.get(0);
+        String name = getRecallSenderName(accountNum, anchor);
+        int count = recalledMessages.size();
+        if (count == 1) {
+            return LocaleController.formatString(R.string.RecalledOneMessage, name);
+        }
+        return LocaleController.formatString(R.string.RecalledMultipleMessages, name, count);
+    }
+
+    private static String getRecallSenderName(int accountNum, MessageObject messageObject) {
+        long senderId = messageObject.getSenderId();
+        if (senderId > 0) {
+            TLRPC.User user = MessagesController.getInstance(accountNum).getUser(senderId);
+            if (user != null) {
+                return UserObject.getUserName(user);
+            }
+        } else if (senderId < 0) {
+            TLRPC.Chat chat = MessagesController.getInstance(accountNum).getChat(-senderId);
+            if (chat != null && !TextUtils.isEmpty(chat.title)) {
+                return chat.title;
+            }
+        }
+        long dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.peer_id);
+        if (dialogId > 0) {
+            TLRPC.User user = MessagesController.getInstance(accountNum).getUser(dialogId);
+            if (user != null) {
+                return UserObject.getUserName(user);
+            }
+        } else if (dialogId < 0) {
+            TLRPC.Chat chat = MessagesController.getInstance(accountNum).getChat(-dialogId);
+            if (chat != null && !TextUtils.isEmpty(chat.title)) {
+                return chat.title;
+            }
+        }
+        return LocaleController.getString(R.string.HiddenName);
+    }
+
+    public static void showRecallDetails(BaseFragment fragment, MessageObject prompt, Theme.ResourcesProvider resourcesProvider) {
+        showRecallDetails(fragment, prompt, resourcesProvider, null);
+    }
+
+    public static void showRecallDetails(BaseFragment fragment, MessageObject prompt, Theme.ResourcesProvider resourcesProvider, Utilities.Callback<MessageObject> onMessageClick) {
+        if (fragment == null || fragment.getParentActivity() == null || prompt == null || prompt.leleRecalledMessages == null || prompt.leleRecalledMessages.isEmpty()) {
+            return;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity(), resourcesProvider);
+        builder.setTitle(LocaleController.getString(R.string.RecalledMessagesTitle));
+        CharSequence[] items = new CharSequence[prompt.leleRecalledMessages.size()];
+        for (int i = 0; i < prompt.leleRecalledMessages.size(); i++) {
+            items[i] = createRecallDetailItem(prompt.leleRecalledMessages.get(i), i + 1);
+        }
+        builder.setItems(items, (dialog, which) -> {
+            if (onMessageClick != null && which >= 0 && which < prompt.leleRecalledMessages.size()) {
+                onMessageClick.run(prompt.leleRecalledMessages.get(which));
+            }
+        });
+        builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+        fragment.showDialog(builder.create());
+    }
+
+    private static CharSequence createRecallDetailItem(MessageObject messageObject, int index) {
+        SpannableStringBuilder item = new SpannableStringBuilder();
+        item.append(String.valueOf(index));
+        item.append(". ");
+        item.append(LocaleController.getInstance().getFormatterDay().format((long) messageObject.messageOwner.date * 1000));
+        item.append('\n');
+        item.append(createRecallMessageSummary(messageObject));
+        return item;
+    }
+
+    private static CharSequence createRecallMessageSummary(MessageObject messageObject) {
+        String mediaType = getRecallMediaType(messageObject);
+        CharSequence text = getRecallText(messageObject, !TextUtils.isEmpty(mediaType));
+        if (TextUtils.isEmpty(mediaType)) {
+            if (!TextUtils.isEmpty(text)) {
+                return trimRecallSummary(text);
+            }
+            return LocaleController.getString(R.string.RecalledUnsupportedMessage);
+        }
+        SpannableStringBuilder summary = new SpannableStringBuilder(mediaType);
+        if (!isRecallMediaOpenable(messageObject) && !isRecallMediaAvailable(messageObject)) {
+            summary.append(" · ");
+            summary.append(LocaleController.getString(R.string.RecalledMediaUnavailable));
+        }
+        if (!TextUtils.isEmpty(text)) {
+            summary.append('\n');
+            summary.append(trimRecallSummary(text));
+        }
+        return summary;
+    }
+
+    private static CharSequence getRecallText(MessageObject messageObject, boolean hasMedia) {
+        if (!TextUtils.isEmpty(messageObject.caption)) {
+            return messageObject.caption;
+        }
+        if (messageObject.messageOwner != null && !TextUtils.isEmpty(messageObject.messageOwner.message)) {
+            return messageObject.messageOwner.message;
+        }
+        if (!hasMedia && !TextUtils.isEmpty(messageObject.messageText)) {
+            return messageObject.messageText;
+        }
+        return null;
+    }
+
+    private static CharSequence trimRecallSummary(CharSequence text) {
+        if (text == null || text.length() <= 500) {
+            return text;
+        }
+        return text.subSequence(0, 500) + "...";
+    }
+
+    private static String getRecallMediaType(MessageObject messageObject) {
+        if (messageObject.isPhoto()) {
+            return LocaleController.getString(R.string.AttachPhoto);
+        } else if (messageObject.isRoundVideo()) {
+            return LocaleController.getString(R.string.AttachRound);
+        } else if (messageObject.isVideo()) {
+            return LocaleController.getString(R.string.AttachVideo);
+        } else if (messageObject.isVoice()) {
+            return LocaleController.getString(R.string.AttachAudio);
+        } else if (messageObject.isMusic()) {
+            return LocaleController.getString(R.string.AttachMusic);
+        } else if (messageObject.isSticker() || messageObject.isAnimatedSticker()) {
+            return LocaleController.getString(R.string.AttachSticker);
+        } else if (messageObject.isGif()) {
+            return LocaleController.getString(R.string.AttachGif);
+        } else if (messageObject.isDocument()) {
+            return LocaleController.getString(R.string.AttachDocument);
+        } else if (messageObject.type == MessageObject.TYPE_GEO) {
+            return LocaleController.getString(R.string.AttachLocation);
+        } else if (messageObject.type == MessageObject.TYPE_CONTACT) {
+            return LocaleController.getString(R.string.AttachContact);
+        } else if (messageObject.isPoll()) {
+            return LocaleController.getString(R.string.Poll);
+        }
+        return null;
+    }
+
+    public static boolean isRecallMediaOpenable(MessageObject messageObject) {
+        return messageObject != null
+                && !messageObject.needDrawBluredPreview()
+                && (messageObject.isVideo()
+                || messageObject.type == MessageObject.TYPE_PHOTO
+                || messageObject.isGif()
+                || messageObject.type == MessageObject.TYPE_TEXT && !messageObject.isWebpageDocument() && !messageObject.isMediaEmpty());
+    }
+
+    private static boolean isRecallMediaAvailable(MessageObject messageObject) {
+        if (messageObject.isMediaEmpty()) {
+            return true;
+        }
+        messageObject.checkMediaExistance();
+        return messageObject.mediaExists || messageObject.attachPathExists;
     }
 
     public static CharSequence createTranslateString(MessageObject messageObject) {

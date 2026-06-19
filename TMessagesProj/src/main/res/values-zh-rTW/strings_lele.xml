@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">隱藏來自黑名單用戶的訊息</string>
     <string name="Connection">連線</string>
     <string name="Chat">聊天</string>
+    <string name="KeepDeletedMessages">防撤回</string>
+    <string name="KeepDeletedMessagesDesc">對方撤回訊息後仍在本機保留，在聊天中顯示撤回提示，點擊提示可查看詳情。</string>
+    <string name="DeletedFilter">已刪除</string>
+    <string name="DeletedMark">已刪除</string>
+    <string name="RecalledOneMessage">%1$s 撤回了一則訊息</string>
+    <string name="RecalledMultipleMessages">%1$s 撤回了 %2$d 則訊息</string>
+    <string name="RecalledMessagesTitle">撤回的訊息</string>
+    <string name="RecalledMediaUnavailable">媒體不可用</string>
+    <string name="RecalledUnsupportedMessage">不支援顯示的撤回訊息</string>
     <string name="ForwardDeletedMessages">轉發已刪除訊息</string>
     <string name="ForwardDeletedMessagesDesc">轉發本機保留的已刪除訊息時，改為複製內容送出，而不是請求伺服器轉發原訊息。</string>
     <string name="AllowProtectedContentActions">允許忽略內容保護限制</string>

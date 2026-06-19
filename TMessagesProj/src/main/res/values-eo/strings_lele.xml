@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Accessibility -->
+    <string name="KeepDeletedMessages">Konservi forigitajn mesaĝojn</string>
+    <string name="KeepDeletedMessagesDesc">Konservi revokitajn mesaĝojn loke, montri revokajn indikojn en babilejoj kaj malfermi detalojn kiam vi tuŝas indikon.</string>
+    <string name="DeletedFilter">Forigita</string>
+    <string name="DeletedMark">Forigita</string>
+    <string name="RecalledOneMessage">%1$s revokis mesaĝon</string>
+    <string name="RecalledMultipleMessages">%1$s revokis %2$d mesaĝojn</string>
+    <string name="RecalledMessagesTitle">Revokitaj mesaĝoj</string>
+    <string name="RecalledMediaUnavailable">aŭdvidaĵo ne disponeblas</string>
+    <string name="RecalledUnsupportedMessage">Nesubtenata revokita mesaĝo</string>
 </resources>

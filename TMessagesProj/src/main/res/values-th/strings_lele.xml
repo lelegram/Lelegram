@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">ซ่อนข้อความจากผู้ที่ถูกบล็อก</string>
     <string name="Connection">การเชื่อมต่อ</string>
     <string name="Chat">แชท</string>
+    <string name="KeepDeletedMessages">เก็บข้อความที่ถูกลบ</string>
+    <string name="KeepDeletedMessagesDesc">เก็บข้อความที่ถูกเรียกคืนไว้ในเครื่อง แสดงการแจ้งเตือนการเรียกคืนในแชท และเปิดรายละเอียดเมื่อแตะการแจ้งเตือน</string>
+    <string name="DeletedFilter">ถูกลบแล้ว</string>
+    <string name="DeletedMark">ถูกลบแล้ว</string>
+    <string name="RecalledOneMessage">%1$s เรียกคืนข้อความหนึ่งข้อความ</string>
+    <string name="RecalledMultipleMessages">%1$s เรียกคืน %2$d ข้อความ</string>
+    <string name="RecalledMessagesTitle">ข้อความที่ถูกเรียกคืน</string>
+    <string name="RecalledMediaUnavailable">สื่อไม่พร้อมใช้งาน</string>
+    <string name="RecalledUnsupportedMessage">ไม่รองรับข้อความที่ถูกเรียกคืนนี้</string>
     <string name="NameOrder">ลำดับของชื่อ</string>
     <string name="FirstLast"> ชื่อจริง นามสกุล</string>
     <string name="LastFirst">นามสกุล ชื่อจริง</string>

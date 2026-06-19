@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Ascundeți mesajele de la utilizatorul blocat</string>
     <string name="Connection">Conexiune</string>
     <string name="Chat">Conversație</string>
+    <string name="KeepDeletedMessages">Păstrează mesajele șterse</string>
+    <string name="KeepDeletedMessagesDesc">Păstrează local mesajele retrase, afișează notificări de retragere în conversații și deschide detaliile când atingi o notificare.</string>
+    <string name="DeletedFilter">Șters</string>
+    <string name="DeletedMark">Șters</string>
+    <string name="RecalledOneMessage">%1$s a retras un mesaj</string>
+    <string name="RecalledMultipleMessages">%1$s a retras %2$d mesaje</string>
+    <string name="RecalledMessagesTitle">Mesaje retrase</string>
+    <string name="RecalledMediaUnavailable">media indisponibilă</string>
+    <string name="RecalledUnsupportedMessage">Mesaj retras neacceptat</string>
     <string name="NameOrder">Ordine de nume</string>
     <string name="FirstLast">Primul Ultimul</string>
     <string name="LastFirst">Ultimul Primul</string>

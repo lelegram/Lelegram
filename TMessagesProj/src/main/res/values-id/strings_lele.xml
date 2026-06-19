@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Sembunyikan pesan dari pengguna yang diblokir</string>
     <string name="Connection">Sambungan</string>
     <string name="Chat">Obrolan</string>
+    <string name="KeepDeletedMessages">Simpan pesan yang dihapus</string>
+    <string name="KeepDeletedMessagesDesc">Simpan pesan yang ditarik secara lokal, tampilkan petunjuk penarikan di obrolan, dan buka detail saat mengetuk petunjuk.</string>
+    <string name="DeletedFilter">Dihapus</string>
+    <string name="DeletedMark">Dihapus</string>
+    <string name="RecalledOneMessage">%1$s menarik sebuah pesan</string>
+    <string name="RecalledMultipleMessages">%1$s menarik %2$d pesan</string>
+    <string name="RecalledMessagesTitle">Pesan yang ditarik</string>
+    <string name="RecalledMediaUnavailable">media tidak tersedia</string>
+    <string name="RecalledUnsupportedMessage">Pesan yang ditarik tidak didukung</string>
     <string name="NameOrder">Urutan nama</string>
     <string name="FirstLast">Nama Belakang</string>
     <string name="LastFirst">Nama Depan</string>

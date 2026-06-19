@@ -7,6 +7,15 @@
     <string name="DeleteAllFromSelfAlert">Varoitus! Tämä **poistaa kaikki viestit sinulta** tässä keskustelussa **kaikille** osallistujille.</string>
     <string name="Connection">Yhteys</string>
     <string name="Chat">Chatti</string>
+    <string name="KeepDeletedMessages">Säilytä poistetut viestit</string>
+    <string name="KeepDeletedMessagesDesc">Säilytä perutut viestit paikallisesti, näytä perumisilmoitukset chateissa ja avaa tiedot, kun ilmoitusta napautetaan.</string>
+    <string name="DeletedFilter">Poistettu</string>
+    <string name="DeletedMark">Poistettu</string>
+    <string name="RecalledOneMessage">%1$s perui viestin</string>
+    <string name="RecalledMultipleMessages">%1$s perui %2$d viestiä</string>
+    <string name="RecalledMessagesTitle">Perutut viestit</string>
+    <string name="RecalledMediaUnavailable">media ei ole käytettävissä</string>
+    <string name="RecalledUnsupportedMessage">Peruttua viestiä ei tueta</string>
     <string name="NameOrder">Nimijärjestys</string>
     <string name="FirstLast">Etunimi Sukunimi</string>
     <string name="LastFirst">Sukunimi Etunimi</string>

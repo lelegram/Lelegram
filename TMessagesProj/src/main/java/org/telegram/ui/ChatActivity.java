@@ -1864,6 +1864,13 @@ public class ChatActivity extends BaseFragment implements
                 return;
             }
             wasManualScroll = true;
+            if (view instanceof ChatActionCell) {
+                MessageObject actionMessage = ((ChatActionCell) view).getMessageObject();
+                if (actionMessage != null && actionMessage.isLeleRecallPrompt()) {
+                    presentFragment(new LeleRecallMessagesActivity(actionMessage.leleRecalledMessages));
+                    return;
+                }
+            }
             if (view instanceof ChatActionCell && ((ChatActionCell) view).getMessageObject().isDateObject) {
                 if (isInsideContainer) {
                     return;
@@ -1925,6 +1932,9 @@ public class ChatActivity extends BaseFragment implements
             } else if (view instanceof ChatActionCell) {
                 message = ((ChatActionCell) view).getMessageObject();
             } else {
+                return false;
+            }
+            if (message != null && message.isLeleRecallPrompt()) {
                 return false;
             }
             var doubleTapAction = message.isOut() ? LeleConfig.doubleTapOutAction : LeleConfig.doubleTapInAction;
@@ -2021,6 +2031,9 @@ public class ChatActivity extends BaseFragment implements
                     return;
                 }
             } else {
+                return;
+            }
+            if (message != null && message.isLeleRecallPrompt()) {
                 return;
             }
             var doubleTapAction = message.isOut() ? LeleConfig.doubleTapOutAction : LeleConfig.doubleTapInAction;
@@ -21676,6 +21689,9 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
             checkGroupMessagesOrder();
+            if (rebuildLeleRecallPrompts(false)) {
+                universalNotify = true;
+            }
             if (createUnreadLoading) {
                 createUnreadMessageAfterId = 0;
             }
@@ -25233,7 +25249,186 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private boolean shouldShowMessageInNormalTimeline(MessageObject messageObject) {
-        return !isNormalChatTimelineMode() || !LeleConfig.hideDeletedMessages || !isLocallyDeletedMessage(messageObject);
+        return true;
+    }
+
+    private boolean shouldUseLeleRecallPrompts() {
+        return isNormalChatTimelineMode() && LeleConfig.keepDeletedMessages;
+    }
+
+    private boolean isLeleRecallPromptSource(MessageObject messageObject) {
+        return shouldUseLeleRecallPrompts()
+                && messageObject != null
+                && !messageObject.isLeleRecallPrompt()
+                && !messageObject.isDateObject
+                && messageObject.contentType != 2
+                && messageObject.messageOwner != null
+                && isLocallyDeletedMessage(messageObject);
+    }
+
+    private boolean canMergeLeleRecallMessages(MessageObject previous, MessageObject current) {
+        return previous != null
+                && current != null
+                && previous.getDialogId() == current.getDialogId()
+                && previous.getSenderId() == current.getSenderId();
+    }
+
+    private String getLeleRecallGroupKey(ArrayList<MessageObject> recalledMessages) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < recalledMessages.size(); i++) {
+            MessageObject messageObject = recalledMessages.get(i);
+            if (i != 0) {
+                builder.append(',');
+            }
+            builder.append(messageObject.getDialogId()).append(':').append(messageObject.getId());
+        }
+        return builder.toString();
+    }
+
+    private int getLoadIndexForMessage(MessageObject messageObject) {
+        return messageObject != null && messageObject.getDialogId() == mergeDialogId ? 1 : 0;
+    }
+
+    private void removeLeleRecallMessagesFromGroups(ArrayList<MessageObject> recalledMessages) {
+        for (int i = 0; i < recalledMessages.size(); i++) {
+            MessageObject messageObject = recalledMessages.get(i);
+            if (messageObject == null || messageObject.getGroupId() == 0) {
+                continue;
+            }
+            MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(messageObject.getGroupId());
+            if (groupedMessages != null) {
+                groupedMessages.messages.remove(messageObject);
+                groupedMessages.positions.remove(messageObject);
+                groupedMessages.positionsArray.remove(messageObject.getId());
+                if (groupedMessages.messages.isEmpty()) {
+                    groupedMessagesMap.remove(groupedMessages.groupId);
+                } else {
+                    groupedMessages.calculate();
+                }
+            }
+        }
+    }
+
+    private void rebuildLeleRecallDayArrays() {
+        messagesByDays.clear();
+        messagesByDaysSorted.clear();
+        for (int i = 0; i < messages.size(); i++) {
+            MessageObject messageObject = messages.get(i);
+            if (messageObject == null || messageObject.isDateObject || messageObject.contentType == 2 || messageObject.type < 0) {
+                continue;
+            }
+            ArrayList<MessageObject> dayArray = messagesByDays.get(messageObject.dateKey);
+            if (dayArray == null) {
+                dayArray = new ArrayList<>();
+                messagesByDays.put(messageObject.dateKey, dayArray);
+                messagesByDaysSorted.put(messageObject.dateKeyInt, dayArray);
+            }
+            dayArray.add(messageObject);
+        }
+    }
+
+    private void syncLeleRecallPromptIndexes(MessageObject prompt) {
+        if (prompt == null || prompt.leleRecalledMessages == null) {
+            return;
+        }
+        for (int i = 0; i < prompt.leleRecalledMessages.size(); i++) {
+            MessageObject recalled = prompt.leleRecalledMessages.get(i);
+            messagesDict[getLoadIndexForMessage(recalled)].put(recalled.getId(), prompt);
+            if (scrollToMessage != null && scrollToMessage.getId() == recalled.getId() && scrollToMessage.getDialogId() == recalled.getDialogId()) {
+                scrollToMessage = prompt;
+            }
+        }
+    }
+
+    private void replaceMessageInsideLeleRecallPrompt(MessageObject prompt, MessageObject messageObject) {
+        if (prompt == null || prompt.leleRecalledMessages == null || messageObject == null) {
+            return;
+        }
+        boolean replaced = false;
+        for (int i = 0; i < prompt.leleRecalledMessages.size(); i++) {
+            if (prompt.leleRecalledMessages.get(i).getId() == messageObject.getId()) {
+                prompt.leleRecalledMessages.set(i, messageObject);
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) {
+            prompt.leleRecalledMessages.add(messageObject);
+        }
+    }
+
+    private boolean rebuildLeleRecallPrompts(boolean notifyAdapter) {
+        if (!shouldUseLeleRecallPrompts() || messages.isEmpty()) {
+            return false;
+        }
+        HashMap<String, MessageObject> existingPrompts = new HashMap<>();
+        ArrayList<MessageObject> expandedMessages = new ArrayList<>(messages.size());
+        for (int i = 0; i < messages.size(); i++) {
+            MessageObject messageObject = messages.get(i);
+            if (messageObject != null && messageObject.isLeleRecallPrompt()) {
+                existingPrompts.put(getLeleRecallGroupKey(messageObject.leleRecalledMessages), messageObject);
+                expandedMessages.addAll(messageObject.leleRecalledMessages);
+            } else {
+                expandedMessages.add(messageObject);
+            }
+        }
+
+        ArrayList<MessageObject> rebuiltMessages = new ArrayList<>(expandedMessages.size());
+        ArrayList<MessageObject> run = null;
+        for (int i = 0; i < expandedMessages.size(); i++) {
+            MessageObject messageObject = expandedMessages.get(i);
+            if (isLeleRecallPromptSource(messageObject)) {
+                if (run == null || run.isEmpty() || canMergeLeleRecallMessages(run.get(run.size() - 1), messageObject)) {
+                    if (run == null) {
+                        run = new ArrayList<>();
+                    }
+                    run.add(messageObject);
+                } else {
+                    rebuiltMessages.add(createOrReuseLeleRecallPrompt(existingPrompts, run));
+                    run = new ArrayList<>();
+                    run.add(messageObject);
+                }
+            } else {
+                if (run != null && !run.isEmpty()) {
+                    rebuiltMessages.add(createOrReuseLeleRecallPrompt(existingPrompts, run));
+                    run = null;
+                }
+                rebuiltMessages.add(messageObject);
+            }
+        }
+        if (run != null && !run.isEmpty()) {
+            rebuiltMessages.add(createOrReuseLeleRecallPrompt(existingPrompts, run));
+        }
+
+        if (rebuiltMessages.equals(messages)) {
+            return false;
+        }
+        messages.clear();
+        messages.addAll(rebuiltMessages);
+        rebuildLeleRecallDayArrays();
+        for (int i = 0; i < messages.size(); i++) {
+            MessageObject messageObject = messages.get(i);
+            if (messageObject != null && messageObject.isLeleRecallPrompt()) {
+                syncLeleRecallPromptIndexes(messageObject);
+            }
+        }
+        if (notifyAdapter && chatAdapter != null && !chatAdapter.isFiltered) {
+            chatAdapter.notifyDataSetChanged(true);
+        }
+        return true;
+    }
+
+    private MessageObject createOrReuseLeleRecallPrompt(HashMap<String, MessageObject> existingPrompts, ArrayList<MessageObject> run) {
+        String key = getLeleRecallGroupKey(run);
+        MessageObject prompt = existingPrompts.get(key);
+        if (prompt == null) {
+            prompt = MessageHelper.createRecallPromptMessageObject(currentAccount, run);
+        } else {
+            MessageHelper.updateRecallPromptMessageObject(prompt, currentAccount, run);
+        }
+        removeLeleRecallMessagesFromGroups(run);
+        syncLeleRecallPromptIndexes(prompt);
+        return prompt;
     }
 
     private long getChannelIdForLoadIndex(int loadIndex) {
@@ -26429,6 +26624,7 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
             }
+            rebuildLeleRecallPrompts(true);
 
             showProgressView(false);
             if (chatAdapter == null) {
@@ -27027,6 +27223,19 @@ public class ChatActivity extends BaseFragment implements
             if (old == null || remove && !ignoreDateCheckBeforeRemove && old.messageOwner.date != messageObject.messageOwner.date || messageObject.scheduled && chatMode != MODE_SCHEDULED) {
                 continue;
             }
+            if (old.isLeleRecallPrompt()) {
+                replaceMessageInsideLeleRecallPrompt(old, messageObject);
+                MessageHelper.updateRecallPromptMessageObject(old, currentAccount, old.leleRecalledMessages);
+                syncLeleRecallPromptIndexes(old);
+                if (chatAdapter != null && !chatAdapter.isFiltered) {
+                    int index = messages.indexOf(old);
+                    if (index >= 0) {
+                        chatAdapter.updateRowAtPosition(chatAdapter.messagesStartRow + index);
+                    }
+                }
+                updateReplyMessageOwners(messageObject.getId(), messageObject);
+                continue;
+            }
             if (!shouldShowMessageInNormalTimeline(messageObject)) {
                 processHiddenDeletedReplacement(messageObject, loadIndex);
                 continue;
@@ -27239,6 +27448,7 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
         }
+        rebuildLeleRecallPrompts(true);
         updatePinnedTopicStarterMessage();
     }
 

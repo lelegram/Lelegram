@@ -13999,6 +13999,7 @@ public class MessagesStorage extends BaseController {
                 ArrayList<String> namesToDelete = new ArrayList<>();
                 ArrayList<Pair<Long, Integer>> idsToDelete = new ArrayList<>();
                 ArrayList<TopicsController.TopicUpdate> topicUpdatesInUi = null;
+                boolean preserveLocalDeletedMessages = LeleConfig.keepDeletedMessages && deleteFiles;
                 ArrayList<TLRPC.Message> deletedMessages = currentUser == dialogId || dialogId == 0 ? new ArrayList<>() : null;
 
                 if (dialogId != 0) {
@@ -14045,7 +14046,7 @@ public class MessagesStorage extends BaseController {
                                 deletedMessages.add(message);
                             }
                             data.reuse();
-                            if (DialogObject.isEncryptedDialog(did) || deleteFiles) {
+                            if (!preserveLocalDeletedMessages && (DialogObject.isEncryptedDialog(did) || deleteFiles)) {
                                 addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
                             }
 
@@ -14087,7 +14088,9 @@ public class MessagesStorage extends BaseController {
                             TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                             message.readAttachPath(data, getUserConfig().clientUserId);
                             data.reuse();
-                            addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
+                            if (!preserveLocalDeletedMessages) {
+                                addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
+                            }
                             if (message.action instanceof TLRPC.TL_messageActionTopicCreate) {
                                 if (topicsToDelete == null) {
                                     topicsToDelete = new ArrayList<>();
@@ -14287,8 +14290,13 @@ public class MessagesStorage extends BaseController {
                         cursor.dispose();
                         cursor = null;
                     }
-                    database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
-                    database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
+                    if (preserveLocalDeletedMessages) {
+                        updateLocalDeletedFlag("messages_v2", String.format(Locale.US, "SELECT mid, uid, data FROM messages_v2 WHERE mid IN(%s) AND uid = %d", ids, did));
+                        updateLocalDeletedFlag("messages_topics", String.format(Locale.US, "SELECT mid, uid, data FROM messages_topics WHERE mid IN(%s) AND uid = %d", ids, did));
+                    } else {
+                        database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
+                        database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
+                    }
                     database.executeFast(String.format(Locale.US, "DELETE FROM polls_v2 WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
                     database.executeFast(String.format(Locale.US, "DELETE FROM bot_keyboard WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
                     database.executeFast(String.format(Locale.US, "DELETE FROM bot_keyboard_topics WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
@@ -14736,6 +14744,7 @@ public class MessagesStorage extends BaseController {
             ArrayList<String> namesToDelete = new ArrayList<>();
             ArrayList<Pair<Long, Integer>> idsToDelete = new ArrayList<>();
             long currentUser = getUserConfig().getClientUserId();
+            boolean preserveLocalDeletedMessages = LeleConfig.keepDeletedMessages && deleteFiles;
 
             cursor = database.queryFinalized(String.format(Locale.US, "SELECT uid, data, read_state, out, mention FROM messages_v2 WHERE uid = %d AND mid <= %d", -channelId, mid));
 
@@ -14766,7 +14775,9 @@ public class MessagesStorage extends BaseController {
                         TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                         message.readAttachPath(data, getUserConfig().clientUserId);
                         data.reuse();
-                        addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
+                        if (!preserveLocalDeletedMessages) {
+                            addFilesToDelete(message, filesToDelete, idsToDelete, namesToDelete, false);
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -14830,8 +14841,12 @@ public class MessagesStorage extends BaseController {
                 cursor = null;
             }
 
-            database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE uid = %d AND mid <= %d", -channelId, mid)).stepThis().dispose();
-            database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE uid = %d AND mid <= %d", -channelId, mid)).stepThis().dispose();
+            if (preserveLocalDeletedMessages) {
+                markHistoryAsLocalDeletedInternal(-channelId, mid);
+            } else {
+                database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE uid = %d AND mid <= %d", -channelId, mid)).stepThis().dispose();
+                database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE uid = %d AND mid <= %d", -channelId, mid)).stepThis().dispose();
+            }
             database.executeFast(String.format(Locale.US, "DELETE FROM media_v4 WHERE uid = %d AND mid <= %d", -channelId, mid)).stepThis().dispose();
             database.executeFast(String.format(Locale.US, "UPDATE media_counts_v2 SET old = 1 WHERE uid = %d", -channelId)).stepThis().dispose();
             database.executeFast(String.format(Locale.US, "UPDATE media_counts_topics SET old = 1 WHERE uid = %d", -channelId)).stepThis().dispose();

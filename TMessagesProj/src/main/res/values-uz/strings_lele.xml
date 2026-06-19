@@ -10,6 +10,15 @@
     <string name="IgnoreBlocked">Bloklangan foydalanuvchilardan kelgan xabarlarni yashirish</string>
     <string name="Connection">Ulanish</string>
     <string name="Chat">Chat</string>
+    <string name="KeepDeletedMessages">Oʻchirilgan xabarlarni saqlash</string>
+    <string name="KeepDeletedMessagesDesc">Qaytarib olingan xabarlarni qurilmada saqlaydi, chatlarda qaytarib olish bildirishlarini ko‘rsatadi va bildirishga bosilganda tafsilotlarni ochadi.</string>
+    <string name="DeletedFilter">Oʻchirilgan</string>
+    <string name="DeletedMark">Oʻchirilgan</string>
+    <string name="RecalledOneMessage">%1$s xabarni qaytarib oldi</string>
+    <string name="RecalledMultipleMessages">%1$s %2$d ta xabarni qaytarib oldi</string>
+    <string name="RecalledMessagesTitle">Qaytarib olingan xabarlar</string>
+    <string name="RecalledMediaUnavailable">media mavjud emas</string>
+    <string name="RecalledUnsupportedMessage">Qaytarib olingan xabar qoʻllab-quvvatlanmaydi</string>
     <string name="NameOrder">Ism tartibi</string>
     <string name="FirstLast">Ism - Familya</string>
     <string name="LastFirst">Familya - Ism</string>

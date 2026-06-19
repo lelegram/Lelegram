@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Accessibility -->
+    <string name="KeepDeletedMessages">שמירת הודעות שנמחקו</string>
+    <string name="KeepDeletedMessagesDesc">שמור הודעות שנמשכו בחזרה באופן מקומי, הצג התראות משיכה בצאטים ופתח פרטים בעת הקשה על התראה.</string>
+    <string name="DeletedFilter">נמחק</string>
+    <string name="DeletedMark">נמחק</string>
+    <string name="RecalledOneMessage">%1$s משך הודעה</string>
+    <string name="RecalledMultipleMessages">%1$s משך %2$d הודעות</string>
+    <string name="RecalledMessagesTitle">הודעות שנמשכו</string>
+    <string name="RecalledMediaUnavailable">המדיה אינה זמינה</string>
+    <string name="RecalledUnsupportedMessage">הודעה שנמשכה אינה נתמכת</string>
 </resources>

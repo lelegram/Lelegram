@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Ẩn tin nhắn từ người dùng bị chặn</string>
     <string name="Connection">Kết nối</string>
     <string name="Chat">Trò chuyện</string>
+    <string name="KeepDeletedMessages">Giữ tin nhắn đã xóa</string>
+    <string name="KeepDeletedMessagesDesc">Lưu cục bộ các tin nhắn đã thu hồi, hiển thị thông báo thu hồi trong cuộc trò chuyện và mở chi tiết khi nhấn vào thông báo.</string>
+    <string name="DeletedFilter">Đã xóa</string>
+    <string name="DeletedMark">Đã xóa</string>
+    <string name="RecalledOneMessage">%1$s đã thu hồi một tin nhắn</string>
+    <string name="RecalledMultipleMessages">%1$s đã thu hồi %2$d tin nhắn</string>
+    <string name="RecalledMessagesTitle">Tin nhắn đã thu hồi</string>
+    <string name="RecalledMediaUnavailable">không có sẵn phương tiện</string>
+    <string name="RecalledUnsupportedMessage">Tin nhắn đã thu hồi không được hỗ trợ</string>
     <string name="NameOrder">Thứ tự tên</string>
     <string name="FirstLast">Họ -Tên</string>
     <string name="LastFirst">Tên - Họ</string>

@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Blokkolt felhasználó üzeneteinek elrejtése</string>
     <string name="Connection">Kapcsolat</string>
     <string name="Chat">Csevegés</string>
+    <string name="KeepDeletedMessages">Törölt üzenetek megtartása</string>
+    <string name="KeepDeletedMessagesDesc">Helyben megőrzi a visszavont üzeneteket, visszavonási jelzéseket mutat a csevegésekben, és a jelzésre koppintva megnyitja a részleteket.</string>
+    <string name="DeletedFilter">Törölve</string>
+    <string name="DeletedMark">Törölve</string>
+    <string name="RecalledOneMessage">%1$s visszavont egy üzenetet</string>
+    <string name="RecalledMultipleMessages">%1$s visszavont %2$d üzenetet</string>
+    <string name="RecalledMessagesTitle">Visszavont üzenetek</string>
+    <string name="RecalledMediaUnavailable">a média nem érhető el</string>
+    <string name="RecalledUnsupportedMessage">Nem támogatott visszavont üzenet</string>
     <string name="NameOrder">Névsorrend</string>
     <string name="FirstLast">Elsőtől Utolsóig</string>
     <string name="LastFirst">Utolsótól Elsőig</string>

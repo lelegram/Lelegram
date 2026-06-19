@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Oculta mensagens de usuários bloqueados</string>
     <string name="Connection">Conexão</string>
     <string name="Chat">Conversa</string>
+    <string name="KeepDeletedMessages">Manter mensagens apagadas</string>
+    <string name="KeepDeletedMessagesDesc">Preserva localmente as mensagens revogadas, mostra avisos de revogação nas conversas e abre os detalhes ao tocar num aviso.</string>
+    <string name="DeletedFilter">Apagado</string>
+    <string name="DeletedMark">Apagado</string>
+    <string name="RecalledOneMessage">%1$s revogou uma mensagem</string>
+    <string name="RecalledMultipleMessages">%1$s revogou %2$d mensagens</string>
+    <string name="RecalledMessagesTitle">Mensagens revogadas</string>
+    <string name="RecalledMediaUnavailable">multimédia indisponível</string>
+    <string name="RecalledUnsupportedMessage">Mensagem revogada não suportada</string>
     <string name="NameOrder">Ordem do Nome</string>
     <string name="FirstLast">Nome Sobrenome</string>
     <string name="LastFirst">Sobrenome Nome</string>

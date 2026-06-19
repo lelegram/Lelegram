@@ -3056,6 +3056,7 @@ public class Theme {
     public static String autoNightCityName = "";
     public static double autoNightLocationLatitude = 10000;
     public static double autoNightLocationLongitude = 10000;
+    private static boolean autoNightLastSwitchToNight;
 
     private static Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -5050,6 +5051,11 @@ public class Theme {
             autoNightSunsetTime = preferences.getInt("autoNightSunsetTime", 22 * 60);
             autoNightSunriseTime = preferences.getInt("autoNightSunriseTime", 8 * 60);
             autoNightCityName = preferences.getString("autoNightCityName", "");
+            autoNightLastSwitchToNight = preferences.getBoolean("autoNightLastSwitchToNight", false);
+            if (selectedAutoNightType == AUTO_NIGHT_TYPE_AUTOMATIC) {
+                // Seed automatic mode from the last applied state until the light sensor reports.
+                lastBrightnessValue = autoNightLastSwitchToNight ? 0.0f : 1.0f;
+            }
             long val = preferences.getLong("autoNightLocationLatitude3", 10000);
             if (val != 10000) {
                 autoNightLocationLatitude = Double.longBitsToDouble(val);
@@ -5159,6 +5165,12 @@ public class Theme {
         editor.putInt("autoNightDayEndTime", autoNightDayEndTime);
         editor.putInt("autoNightSunriseTime", autoNightSunriseTime);
         editor.putString("autoNightCityName", autoNightCityName);
+        if (selectedAutoNightType == AUTO_NIGHT_TYPE_AUTOMATIC) {
+            editor.putBoolean("autoNightLastSwitchToNight", autoNightLastSwitchToNight);
+        } else {
+            autoNightLastSwitchToNight = false;
+            editor.remove("autoNightLastSwitchToNight");
+        }
         editor.putInt("autoNightSunsetTime", autoNightSunsetTime);
         editor.putLong("autoNightLocationLatitude3", Double.doubleToRawLongBits(autoNightLocationLatitude));
         editor.putLong("autoNightLocationLongitude3", Double.doubleToRawLongBits(autoNightLocationLongitude));
@@ -7290,6 +7302,7 @@ public class Theme {
             return;
         }
 
+        saveAutoNightLastSwitchState(night);
         if (night) {
             if (currentTheme != currentNightTheme && (currentTheme == null || currentNightTheme != null &&  currentTheme.isDark() != currentNightTheme.isDark())) {
                 isInNigthMode = true;
@@ -7311,6 +7324,14 @@ public class Theme {
                 switchingNightTheme = false;
             }
         }
+    }
+
+    private static void saveAutoNightLastSwitchState(boolean night) {
+        if (selectedAutoNightType != AUTO_NIGHT_TYPE_AUTOMATIC || autoNightLastSwitchToNight == night) {
+            return;
+        }
+        autoNightLastSwitchToNight = night;
+        MessagesController.getGlobalMainSettings().edit().putBoolean("autoNightLastSwitchToNight", night).commit();
     }
 
     public static boolean deleteTheme(ThemeInfo themeInfo) {

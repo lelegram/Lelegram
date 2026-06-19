@@ -7,6 +7,15 @@
     <string name="IgnoreBlocked">Блок</string>
     <string name="Connection">Инетик</string>
     <string name="Chat">Банда</string>
+    <string name="KeepDeletedMessages">Conserva els missatges suprimits</string>
+    <string name="KeepDeletedMessagesDesc">Conserva localment els missatges retirats, mostra avisos de retirada als xats i obre els detalls en tocar un avís.</string>
+    <string name="DeletedFilter">Suprimit</string>
+    <string name="DeletedMark">Suprimit</string>
+    <string name="RecalledOneMessage">%1$s ha retirat un missatge</string>
+    <string name="RecalledMultipleMessages">%1$s ha retirat %2$d missatges</string>
+    <string name="RecalledMessagesTitle">Missatges retirats</string>
+    <string name="RecalledMediaUnavailable">multimèdia no disponible</string>
+    <string name="RecalledUnsupportedMessage">Missatge retirat no compatible</string>
     <string name="NameOrder">Имечко</string>
     <string name="FirstLast">Ебалась</string>
     <string name="LastFirst">Была с котиками</string>

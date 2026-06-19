@@ -11,6 +11,15 @@
     <string name="IgnoreBlocked">Nachrichten von blockierten Benutzern ausblenden</string>
     <string name="Connection">Verbindung</string>
     <string name="Chat">Chat</string>
+    <string name="KeepDeletedMessages">Gelöschte Nachrichten behalten</string>
+    <string name="KeepDeletedMessagesDesc">Zurückgerufene Nachrichten lokal behalten, Rückrufhinweise in Chats anzeigen und Details beim Tippen auf einen Hinweis öffnen.</string>
+    <string name="DeletedFilter">Gelöscht</string>
+    <string name="DeletedMark">Gelöscht</string>
+    <string name="RecalledOneMessage">%1$s hat eine Nachricht zurückgerufen</string>
+    <string name="RecalledMultipleMessages">%1$s hat %2$d Nachrichten zurückgerufen</string>
+    <string name="RecalledMessagesTitle">Zurückgerufene Nachrichten</string>
+    <string name="RecalledMediaUnavailable">Medien nicht verfügbar</string>
+    <string name="RecalledUnsupportedMessage">Nicht unterstützte zurückgerufene Nachricht</string>
     <string name="NameOrder">Namensreihenfolge</string>
     <string name="FirstLast">Nachname zuerst</string>
     <string name="LastFirst">Vorname zuerst</string>

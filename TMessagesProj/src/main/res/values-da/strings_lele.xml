@@ -8,6 +8,15 @@
     <string name="IgnoreBlocked">Skjul beskeder fra blokeret bruger</string>
     <string name="Connection">Forbindelse</string>
     <string name="Chat">Chat</string>
+    <string name="KeepDeletedMessages">Behold slettede beskeder</string>
+    <string name="KeepDeletedMessagesDesc">Gem tilbagekaldte beskeder lokalt, vis tilbagekaldelsesbeskeder i chats, og åbn detaljer, når du trykker på en besked.</string>
+    <string name="DeletedFilter">Slettet</string>
+    <string name="DeletedMark">Slettet</string>
+    <string name="RecalledOneMessage">%1$s trak en besked tilbage</string>
+    <string name="RecalledMultipleMessages">%1$s trak %2$d beskeder tilbage</string>
+    <string name="RecalledMessagesTitle">Tilbagekaldte beskeder</string>
+    <string name="RecalledMediaUnavailable">medie ikke tilgængeligt</string>
+    <string name="RecalledUnsupportedMessage">Ikke-understøttet tilbagekaldt besked</string>
     <string name="NameOrder">Navnerækkefølge</string>
     <string name="FirstLast">Første Sidst</string>
     <string name="LastFirst">Sidste Først</string>
