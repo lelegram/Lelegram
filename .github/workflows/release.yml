@@ -95,8 +95,8 @@ jobs:
           "version_code=$versionCode" >> $env:GITHUB_OUTPUT
 
       - name: Build release APKs
-        shell: pwsh
-        run: .\gradlew.bat --no-daemon :TMessagesProj_App:assembleRelease -PnativeDebugSymbolLevel=SYMBOL_TABLE
+        shell: bash
+        run: ./gradlew --no-daemon :TMessagesProj_App:assembleRelease -PnativeDebugSymbolLevel=SYMBOL_TABLE
 
       - name: Create and push tag
         shell: pwsh
