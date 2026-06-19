@@ -7,6 +7,22 @@
 -keep class org.webrtc.voiceengine.* { *; }
 -keep class org.telegram.tgnet.RequestTimeDelegate { *; }
 -keep class org.telegram.tgnet.RequestDelegate { *; }
+
+# JNI symbols and native registration rely on exact Java class/member names.
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Native video code looks this up from JNI_OnLoad by exact class and method names.
+-keep class org.telegram.messenger.AnimatedFileDrawableStream { *; }
+
+# Native TgNet code registers and calls these classes by exact JNI names.
+-keep class org.telegram.tgnet.ConnectionsManager { *; }
+-keep class org.telegram.tgnet.NativeByteBuffer { *; }
+
+# Telegram VoIP native code registers bridge classes and callbacks by exact names.
+-keep class org.telegram.messenger.voip.** { *; }
+
 -keep class com.google.android.exoplayer2.ext.** { *; }
 -keep class com.google.android.exoplayer2.extractor.FlacStreamMetadata { *; }
 -keep class com.google.android.exoplayer2.metadata.flac.PictureFrame { *; }
