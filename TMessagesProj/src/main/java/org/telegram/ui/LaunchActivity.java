@@ -34,6 +34,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Path;
+import android.graphics.drawable.ColorDrawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -394,10 +395,32 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     private FrameMetricsOverlayView frameMetricsOverlayView;
     // private RefreshRateController refreshRateController;
 
+    private boolean applyStartupBackground() {
+        if (!Theme.shouldUseDarkStartupBackground(this)) {
+            return false;
+        }
+        Window window = getWindow();
+        window.setBackgroundDrawable(new ColorDrawable(Theme.STARTUP_NIGHT_BACKGROUND_COLOR));
+        if (Build.VERSION.SDK_INT >= 21) {
+            window.setStatusBarColor(Theme.STARTUP_NIGHT_BACKGROUND_COLOR);
+            window.setNavigationBarColor(Color.BLACK);
+        }
+        if (Build.VERSION.SDK_INT >= 23) {
+            View decorView = window.getDecorView();
+            decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
+        if (Build.VERSION.SDK_INT >= 26) {
+            View decorView = window.getDecorView();
+            decorView.setSystemUiVisibility(decorView.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
+        return true;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         isActive = true;
         activeInstanceCount++;
+        boolean useDarkStartupBackground = applyStartupBackground();
         if (BuildVars.DEBUG_VERSION) {
             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder(StrictMode.getVmPolicy())
                 .detectLeakedClosableObjects()
@@ -437,7 +460,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } catch (Throwable ignore) {
 
         }
-        getWindow().setBackgroundDrawableResource(R.drawable.transparent);
+        if (useDarkStartupBackground) {
+            getWindow().setBackgroundDrawable(new ColorDrawable(Theme.STARTUP_NIGHT_BACKGROUND_COLOR));
+        } else {
+            getWindow().setBackgroundDrawableResource(R.drawable.transparent);
+        }
         flagSecureReason = new FlagSecureReason(getWindow(), () -> SharedConfig.passcodeHash.length() > 0 && !SharedConfig.allowScreenCapture);
         flagSecureReason.attach();
 
