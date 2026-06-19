@@ -100,60 +100,14 @@
   <fields>;
 }
 
--keepclasseswithmembers,allowobfuscation class * {
-  @com.google.gson.annotations.SerializedName <fields>;
-}
+-keep class io.nano.tex.** {*;}
 
-# Keep automation model classes for Gson serialization/deserialization
--keep class com.fylnx.lelegram.automation.AutomationModels$** { *; }
+# JLatexMath: macro/atom classes are loaded reflectively by Class.forName
+-keep class org.scilab.forge.jlatexmath.** { *; }
+-keep class ru.noties.jlatexmath.** { *; }
+-dontwarn org.scilab.forge.jlatexmath.**
 
-# Gson uses generic type information stored in a class file when working with fields. Proguard
-# removes such information by default, so configure it to keep all of it.
--keepattributes Signature,InnerClasses,EnclosingMethod
-
--keep class org.telegram.messenger.voip.* { *; }
--keep class org.telegram.messenger.AnimatedFileDrawableStream { <methods>; }
--keep class org.telegram.SQLite.SQLiteException { <methods>; }
--keep class org.telegram.tgnet.ConnectionsManager { <methods>; }
--keep class org.telegram.tgnet.NativeByteBuffer { <methods>; }
--keepnames class ** extends org.telegram.ui.ActionBar.BaseFragment
--keepclassmembernames,allowshrinking class org.telegram.ui.* { <fields>; }
--keepclassmembernames,allowshrinking class org.telegram.ui.Cells.* { <fields>; }
--keepclassmembernames,allowshrinking class org.telegram.ui.Components.* { <fields>; }
--keepclassmembernames,allowshrinking class com.fylnx.lelegram.MessageDetailsActivity$TextDetailSimpleCell { <fields>; }
--keepclassmembernames,allowshrinking class com.fylnx.lelegram.settings.AccountCell { <fields>; }
--keepclassmembernames,allowshrinking class com.fylnx.lelegram.settings.EmojiSetCell { <fields>; }
--keepclassmembernames,allowshrinking class com.fylnx.lelegram.settings.LeleChatSettingsActivity$StickerSizeCell { <fields>; }
-
--keepclassmembernames class androidx.core.widget.NestedScrollView {
-    private android.widget.OverScroller mScroller;
-    private void abortAnimatedScroll();
-}
-
--keepclasseswithmembernames,includedescriptorclasses class * {
-    native <methods>;
-}
-
--assumenosideeffects class kotlin.jvm.internal.Intrinsics {
-    public static void check*(...);
-    public static void throw*(...);
-}
-
--keepclassmembers enum * {
-     public static **[] values();
-     public static ** valueOf(java.lang.String);
-}
-
--keepnames class androidx.recyclerview.widget.RecyclerView
--keepclassmembers class androidx.recyclerview.widget.RecyclerView {
-    public void suppressLayout(boolean);
-    public boolean isLayoutSuppressed();
-}
-
--repackageclasses
--allowaccessmodification
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
+# Use -keep to explicitly keep any other classes shrinking would remove
 -dontoptimize
 
 -dontwarn android.support.annotation.*

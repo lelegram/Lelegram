@@ -11,6 +11,7 @@ package org.telegram.ui;
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.replaceArrows;
 import static org.telegram.messenger.AndroidUtilities.replaceSingleTag;
+import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessagesController.findUpdatesAndRemove;
@@ -144,6 +145,7 @@ import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
+import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -750,7 +752,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 finishFragment();
             }
         });
-        backButtonView.setContentDescription(getString(R.string.Back));
+        backButtonView.setContentDescription(getString(R.string.AccDescrGoBack));
         int padding = AndroidUtilities.dp(4);
         backButtonView.setPadding(padding, padding, padding, padding);
         sizeNotifierFrameLayout.addView(backButtonView, LayoutHelper.createFrame(32, 32, Gravity.LEFT | Gravity.TOP, 16, 16, 0, 0));
@@ -860,7 +862,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     }
 
     private boolean isCustomKeyboardForceDisabled() {
-        return AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y || AndroidUtilities.isTablet() || AndroidUtilities.isAccessibilityTouchExplorationEnabled();
+        return /*AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y || AndroidUtilities.isTablet() || */ AndroidUtilities.isAccessibilityTouchExplorationEnabled();
     }
 
     private boolean isCustomKeyboardVisible() {
@@ -1721,6 +1723,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         MessagesController.getInstance(currentAccount).checkPromoInfo(true);
         ConnectionsManager.getInstance(currentAccount).updateDcSettings();
         MessagesController.getInstance(currentAccount).loadAppConfig();
+        MessagesController.getInstance(currentAccount).loadWebBrowserConfig();
         MessagesController.getInstance(currentAccount).checkPeerColors(false);
 
         if (res.future_auth_token != null) {
@@ -1816,6 +1819,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             params.putString("support_email_address", auth.support_email_address);
             params.putString("support_email_subject", auth.support_email_subject);
             params.putString("currency", auth.currency);
+            params.putInt("premium_days", auth.premium_days);
             params.putLong("amount", auth.amount);
             setPage(VIEW_PAY, true, params, true);
             return;
@@ -10145,12 +10149,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             final String countryCode = params == null ? null : params.getString("country");
             final String countryName = LocaleController.getCountryName(countryCode);
 
-            if (TextUtils.isEmpty(countryName)) {
-                cells[0].subtitleView.setText(getString(R.string.SMSFee1Text));
-            } else {
-                cells[0].subtitleView.setText(formatString(R.string.SMSFee1TextCountry, countryName));
-            }
-
             final String product = params == null ? null : params.getString("product");
             final String phone = params == null ? null : params.getString("phoneFormated");
             final String phoneHash = params == null ? null : params.getString("phoneHash");
@@ -10158,6 +10156,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             final String support_email_subject = params == null ? null : params.getString("support_email_subject");
             final String currency = params == null ? null : params.getString("currency");
             final long amount = params == null ? 0 : params.getLong("amount");
+            final int premium_days = params == null ? 0 : params.getInt("premium_days");
+
+            if (TextUtils.isEmpty(countryName)) {
+                cells[0].subtitleView.setText(getString(R.string.SMSFee1Text));
+            } else {
+                cells[0].subtitleView.setText(formatString(R.string.SMSFee1TextCountry, countryName));
+            }
+
+            cells[2].setSubtitle(premium_days == 7 ? getString(R.string.SMSFee3Text) : formatPluralStringComma("SMSFee3TextDays", premium_days));
 
             optionsButton.setOnClickListener(v -> {
                 ItemOptions.makeOptions(LoginActivity.this, optionsButton)
@@ -10295,7 +10302,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                     button.setVisibility(View.VISIBLE);
                     button.setLoading(false);
                     button.setText(formatString(R.string.SMSFeePurchaseTitle, BillingController.getInstance().formatCurrency(amount, currency)), false);
-                    button.setSubText(getString(R.string.SMSFeePurchaseText), false);
+                    button.setSubText(premium_days == 7 ? getString(R.string.SMSFeePurchaseText) : formatPluralStringComma("SMSFeePurchaseTextDays", premium_days), false);
                     button.setOnClickListener(v -> {
                         if (button.isLoading())
                             return;
@@ -10306,6 +10313,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         purpose.amount = amount;
                         purpose.phone_code_hash = TextUtils.isEmpty(phoneHash) ? "" : phoneHash;
                         purpose.phone_number = phone;
+                        purpose.premium_days = premium_days;
 
                         final TLRPC.TL_inputInvoicePremiumAuthCode invoice = new TLRPC.TL_inputInvoicePremiumAuthCode();
                         invoice.purpose = purpose;
@@ -10396,6 +10404,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                             purpose.amount = (long) ((offer.getPriceAmountMicros() / Math.pow(10, 6)) * Math.pow(10, BillingController.getInstance().getCurrencyExp(purpose.currency)));
                             purpose.phone_code_hash = TextUtils.isEmpty(phoneHash) ? "" : phoneHash;
                             purpose.phone_number = phone;
+                            purpose.premium_days = premium_days;
 
                             FileLog.d("LoginBilling found \"" + product + "\" product, with currency=" + purpose.currency + " amount=" + purpose.amount + "; phone=" + phone + ", phone_code_hash=" + phoneHash);
 
@@ -10405,7 +10414,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                 FileLog.d("LoginBilling canPurchaseStore returned " + res + " " + err);
                                 if (res instanceof TLRPC.TL_boolTrue) {
                                     button.setText(formatString(R.string.SMSFeePurchaseTitle, offer.getFormattedPrice()), false);
-                                    button.setSubText(getString(R.string.SMSFeePurchaseText), false);
+                                    button.setSubText(premium_days == 7 ? getString(R.string.SMSFeePurchaseText) : formatPluralStringComma("SMSFeePurchaseTextDays", premium_days), false);
                                     button.setLoading(false);
                                     button.setOnClickListener(v -> {
                                         if (button.isLoading()) return;
@@ -10452,7 +10461,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                                                             req2.purpose = purpose;
                                                             getConnectionsManager().sendRequest(req2, (response, error) -> {
                                                                 if (response instanceof TLRPC.Updates) {
-                                                                    for (TLRPC.TL_updateSentPhoneCode u : findUpdatesAndRemove((TLRPC.Updates) response, TLRPC.TL_updateSentPhoneCode.class)) {
+                                                                    for (TL_update.TL_updateSentPhoneCode u : findUpdatesAndRemove((TLRPC.Updates) response, TL_update.TL_updateSentPhoneCode.class)) {
                                                                         AndroidUtilities.runOnUIThread(() -> {
                                                                             paid = true;
                                                                             LoginActivity fragment = LaunchActivity.findFragment(LoginActivity.class);

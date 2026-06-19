@@ -1616,6 +1616,54 @@ public class DatabaseMigrationHelper {
             version = 170;
         }
 
+        if (version == 170) {
+            database.executeFast("CREATE TABLE IF NOT EXISTS poll_votes_mentions(message_id INTEGER, state INTEGER, dialog_id INTEGER, PRIMARY KEY(message_id, dialog_id))").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS poll_votes_mentions_did ON poll_votes_mentions(dialog_id);").stepThis().dispose();
+            database.executeFast("CREATE TABLE IF NOT EXISTS poll_votes_mentions_topics(message_id INTEGER, state INTEGER, dialog_id INTEGER, topic_id INTEGER, PRIMARY KEY(message_id, dialog_id, topic_id))").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS poll_votes_mentions_topics_did ON poll_votes_mentions_topics(dialog_id, topic_id);").stepThis().dispose();
+
+            database.executeFast("PRAGMA user_version = 171").stepThis().dispose();
+            version = 171;
+        }
+
+        if (version == 171) {
+            database.executeFast("DROP TABLE story_pushes").stepThis().dispose();
+            database.executeFast("CREATE TABLE story_pushes (uid INTEGER, sid INTEGER, date INTEGER, localName TEXT, flags INTEGER, expire_date INTEGER, live INTEGER, PRIMARY KEY(uid, sid));").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 172").stepThis().dispose();
+            version = 172;
+        }
+        if (version == 172) {
+            database.executeFast("CREATE INDEX IF NOT EXISTS uid_end_messages_holes_4_dialogs ON messages_holes(uid, end);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS uid_end_messages_holes_4_topics ON messages_holes_topics(uid, topic_id, end);").stepThis().dispose();
+
+            database.executeFast("CREATE INDEX IF NOT EXISTS date_idx_4_saved_dialogs ON saved_dialogs(date);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS date_idx_4_dialogs ON dialogs(date);").stepThis().dispose();
+
+            database.executeFast("CREATE INDEX IF NOT EXISTS last_mid_idx_4_saved_dialogs ON saved_dialogs(last_mid);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS last_mid_idx_4_dialogs ON dialogs(last_mid);").stepThis().dispose();
+
+            database.executeFast("CREATE INDEX IF NOT EXISTS folder_id_idx_4_saved_dialogs ON saved_dialogs(folder_id);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS folder_id_idx_4_dialogs ON dialogs(folder_id);").stepThis().dispose();
+
+            database.executeFast("CREATE INDEX IF NOT EXISTS flags_idx_4_saved_dialogs ON saved_dialogs(flags);").stepThis().dispose();
+            database.executeFast("CREATE INDEX IF NOT EXISTS flags_idx_4_dialogs ON dialogs(flags);").stepThis().dispose();
+
+
+            database.executeFast("DROP INDEX IF EXISTS uid_end_messages_holes;").stepThis().dispose();
+            database.executeFast("DROP INDEX IF EXISTS date_idx_dialogs;").stepThis().dispose();
+            database.executeFast("DROP INDEX IF EXISTS last_mid_idx_dialogs;").stepThis().dispose();
+            database.executeFast("DROP INDEX IF EXISTS folder_id_idx_dialogs;").stepThis().dispose();
+            database.executeFast("DROP INDEX IF EXISTS flags_idx_dialogs;").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 173").stepThis().dispose();
+
+            version = 173;
+        }
+        if (version == 173) {
+            database.executeFast("CREATE TABLE web_browser_settings(data BLOB)").stepThis().dispose();
+            database.executeFast("PRAGMA user_version = 174").stepThis().dispose();
+            version = 174;
+        }
+
         return version;
     }
 

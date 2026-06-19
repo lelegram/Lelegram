@@ -121,6 +121,7 @@ android {
 
     defaultConfig {
         versionName APP_VERSION_NAME
+        ndkVersion "27.2.12479018"
 
         multiDexEnabled true
     }

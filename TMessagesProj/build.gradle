@@ -27,6 +27,8 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-cast-framework:22.3.0'
     implementation 'androidx.mediarouter:mediarouter:1.8.1'
+    implementation 'androidx.car.app:app:1.4.0'
+    implementation 'androidx.car.app:app-projected:1.4.0'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
 
     compileOnly 'org.checkerframework:checker-qual:2.5.2'
@@ -57,6 +59,16 @@ dependencies {
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     implementation 'com.google.android.gms:play-services-mlkit-image-labeling:16.0.8'
 
+    implementation "androidx.credentials:credentials:1.6.0-alpha04"
+    implementation "androidx.credentials:credentials-play-services-auth:1.6.0-alpha04"
+
+    implementation "io.noties.markwon:core:4.6.2"
+    implementation "io.noties.markwon:ext-strikethrough:4.6.2"
+    implementation "io.noties.markwon:ext-tables:4.6.2"
+    implementation "io.noties.markwon:html:4.6.2"
+    implementation "io.noties.markwon:inline-parser:4.6.2"
+    implementation "io.noties.markwon:ext-latex:4.6.2"
+
 //    implementation 'com.google.mlkit:translate:17.0.3'
 
     constraints {
@@ -67,6 +79,8 @@ dependencies {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
+
+    implementation 'com.google.android.recaptcha:recaptcha:18.7.1'
 
     implementation 'androidx.browser:browser:1.9.0'
     implementation 'app.nekogram.gifski:gifski:1.0.0'
@@ -179,6 +193,7 @@ android {
             buildConfigField("String","BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
             buildConfigField("String", "BUILD_TIME_UTC", "\"${buildTimeUtc}\"")
             buildConfigField("boolean", "DEBUG_PRIVATE_VERSION", "false")
+            buildConfigField("boolean", "DEBUG_VERSION", "false")
         }
 
         release {
@@ -188,6 +203,7 @@ android {
             buildConfigField("String","BUILD_VERSION_STRING","\"${TG_APP_VERSION_NAME}\"")
             buildConfigField("String", "BUILD_TIME_UTC", "\"${buildTimeUtc}\"")
             buildConfigField("boolean", "DEBUG_PRIVATE_VERSION", "false")
+            buildConfigField("boolean", "DEBUG_VERSION", "false")
         }
     }
     namespace 'org.telegram.messenger'

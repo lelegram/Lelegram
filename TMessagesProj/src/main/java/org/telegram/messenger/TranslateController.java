@@ -387,7 +387,7 @@ public class TranslateController extends BaseController {
         "he", "hi", "hmn", "hu", "is", "ig", "id", "ga", "it", "ja", "jv",
         "kn", "kk", "km", "rw", "ko", "ku", "ky", "lo", "la", "lv", "lt", "lb",
         "mk", "mg", "ms", "ml", "mt", "mi", "mr", "mn", "my", "ne", "no", "ny",
-        "or", "ps", "fa", "pl", "pt", "pa", "ro", "ru", "sm", "gd", "sr", "st",
+        "or", "ps", "fa", "pl", "pt", "pt-br", "pa", "ro", "ru", "sm", "gd", "sr", "st",
         "sn", "sd", "si", "sk", "sl", "so", "es", "su", "sw", "sv", "tl", "tg",
         "ta", "tt", "te", "th", "tr", "tk", "uk", "ur", "ug", "uz", "vi", "cy",
         "xh", "yi", "yo", "zu"
@@ -941,7 +941,7 @@ public class TranslateController extends BaseController {
         req.id = message.getId();
         if (language != null) {
             req.flags |= TLObject.FLAG_0;
-            req.to_lang = language;
+            req.to_lang = normalizeLanguage(language);
         }
         ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (res, err) -> {
             if (res != null) {
@@ -1470,24 +1470,27 @@ public class TranslateController extends BaseController {
 
         translatingStories.add(key);
 
-        Translator.translate(storyItem.caption, storyItem.entities, null, storyItem.detectedLng, null, new Translator.TranslateCallBack() {
-            @Override
-            public void onSuccess(TLRPC.TL_textWithEntities translation, String sourceLanguage, String targetLanguage) {
-                storyItem.translatedLng = targetLanguage;
-                storyItem.translatedText = translation;
-                getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-                translatingStories.remove(key);
-                if (done != null) {
-                    done.run();
-                }
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                Translator.handleTranslationError(context, t, () -> translateStory(context, storyItem, done), new DarkThemeResourceProvider());
-                translatingStories.remove(key);
-                if (done != null) {
-                    done.run();
+        final TLRPC.TL_messages_translateText req = new TLRPC.TL_messages_translateText();
+        req.flags |= 2;
+        final TLRPC.TL_textWithEntities text = new TLRPC.TL_textWithEntities();
+        text.text = storyItem.caption;
+        text.entities = storyItem.entities;
+        req.text.add(text);
+        req.to_lang = normalizeLanguage(toLang);
+        getConnectionsManager().sendRequest(req, (res, err) -> {
+            if (res instanceof TLRPC.TL_messages_translateResult) {
+                ArrayList<TLRPC.TL_textWithEntities> result = ((TLRPC.TL_messages_translateResult) res).result;
+                if (result.size() <= 0) {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        storyItem.translatedLng = toLang;
+                        storyItem.translatedText = null;
+                        getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
+                        translatingStories.remove(key);
+                        if (done != null) {
+                            done.run();
+                        }
+                    });
+                    return;
                 }
             }
         });
@@ -1582,6 +1585,16 @@ public class TranslateController extends BaseController {
 
         translatingPhotos.add(key);
 
+        final TLRPC.TL_messages_translateText req = new TLRPC.TL_messages_translateText();
+        req.flags |= 2;
+        final TLRPC.TL_textWithEntities text = new TLRPC.TL_textWithEntities();
+        text.text = messageObject.messageOwner.message;
+        text.entities = messageObject.messageOwner.entities;
+        if (text.entities == null) {
+            text.entities = new ArrayList<>();
+        }
+        req.text.add(text);
+        req.to_lang = normalizeLanguage(toLang);
         final long start = System.currentTimeMillis();
         Translator.translate(messageObject.messageOwner.message, messageObject.messageOwner.entities, null, captionDetectedLanguage, null, new Translator.TranslateCallBack() {
             @Override
@@ -1605,6 +1618,18 @@ public class TranslateController extends BaseController {
                 }
             }
         });
+    }
+
+    public static String normalizeLanguage(String lng) {
+        if (lng == null) return null;
+        if (lng.contains("_")) {
+            final String[] parts = lng.split("_", 2);
+            return parts[0].toLowerCase() + "-" + parts[1].toUpperCase();
+        } else if (lng.contains("-")) {
+            final String[] parts = lng.split("-", 2);
+            return parts[0].toLowerCase() + "-" + parts[1].toUpperCase();
+        }
+        return lng;
     }
 
     private static class MessageKey {
