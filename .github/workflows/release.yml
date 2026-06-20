@@ -65,6 +65,24 @@ jobs:
             -storepass android `
             -alias androiddebugkey | Out-Null
 
+      - name: Restore Extra.java
+        shell: pwsh
+        env:
+          EXTRA_JAVA_BASE64: ${{ secrets.EXTRA_JAVA_BASE64 }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $extraJava = Join-Path $env:GITHUB_WORKSPACE 'TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java'
+
+          if ([string]::IsNullOrWhiteSpace($env:EXTRA_JAVA_BASE64)) {
+            throw 'Repository secret EXTRA_JAVA_BASE64 is required.'
+          }
+
+          [IO.File]::WriteAllBytes($extraJava, [Convert]::FromBase64String($env:EXTRA_JAVA_BASE64))
+
+          if (-not (Select-String -LiteralPath $extraJava -Pattern 'class Extra' -Quiet)) {
+            throw 'Restored Extra.java does not contain class Extra.'
+          }
+
       - name: Read release metadata
         id: metadata
         shell: pwsh
@@ -143,6 +161,7 @@ jobs:
           Version: ${{ steps.metadata.outputs.version_name }}
           Version code: ${{ steps.metadata.outputs.version_code }}
           Signing: Repository secret DEBUG_KEYSTORE_BASE64
+          Private config: Repository secret EXTRA_JAVA_BASE64
           "@
 
           gh release view $tag *> $null
