@@ -83,10 +83,10 @@ dependencies {
     implementation 'com.google.android.recaptcha:recaptcha:18.7.1'
 
     implementation 'androidx.browser:browser:1.9.0'
-    implementation 'app.nekogram.gifski:gifski:1.0.0'
-    implementation 'app.nekogram.translator:translator:1.5.5'
+    implementation files('libs/lelegram-translator-1.5.5.jar')
     implementation 'com.jaredrummler:truetypeparser-light:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'org.lsposed.lsparanoid:core:0.5.2'
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:6.1'
     implementation 'org.apache.commons:commons-text:1.15.0'
 

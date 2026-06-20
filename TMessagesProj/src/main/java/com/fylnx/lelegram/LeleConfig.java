@@ -20,16 +20,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import app.nekogram.translator.DeepLTranslator;
 import com.fylnx.lelegram.automation.AutomationManager;
 import com.fylnx.lelegram.automation.AutomationModels;
 import com.fylnx.lelegram.automation.AutomationRuleValidator;
 import com.fylnx.lelegram.helpers.AnalyticsHelper;
 import com.fylnx.lelegram.helpers.CloudSettingsHelper;
 import com.fylnx.lelegram.helpers.LensHelper;
-import com.fylnx.lelegram.helpers.PreferenceMigrationHelper;
 import com.fylnx.lelegram.translator.Translator;
 import com.fylnx.lelegram.translator.TranslatorApps;
+import com.fylnx.lelegram.vendor.translator.DeepLTranslator;
 
 public class LeleConfig {
     //TODO: refactor
@@ -170,7 +169,6 @@ public class LeleConfig {
     private static boolean configLoaded;
 
     static {
-        PreferenceMigrationHelper.migrate("leleconfig", "nekoconfig", Activity.MODE_PRIVATE);
         loadConfig(false);
     }
 

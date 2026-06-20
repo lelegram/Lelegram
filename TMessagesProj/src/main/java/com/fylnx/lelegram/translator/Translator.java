@@ -39,10 +39,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import app.nekogram.translator.Http429Exception;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.PopupHelper;
 import com.fylnx.lelegram.settings.LeleLanguagesSelectActivity;
+import com.fylnx.lelegram.vendor.translator.Http429Exception;
 
 public class Translator {
 

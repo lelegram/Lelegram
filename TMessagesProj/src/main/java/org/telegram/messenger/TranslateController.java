@@ -52,10 +52,10 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-import app.nekogram.translator.Http429Exception;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.MessageHelper;
 import com.fylnx.lelegram.translator.Translator;
+import com.fylnx.lelegram.vendor.translator.Http429Exception;
 
 public class TranslateController extends BaseController {
 

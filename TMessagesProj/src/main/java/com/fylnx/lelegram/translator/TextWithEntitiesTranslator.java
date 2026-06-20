@@ -6,18 +6,18 @@ import org.telegram.ui.Components.TranslateAlert2;
 import java.util.HashMap;
 import java.util.List;
 
-import app.nekogram.translator.BaiduTranslator;
-import app.nekogram.translator.BaseTranslator;
-import app.nekogram.translator.DeepLTranslator;
-import app.nekogram.translator.GoogleAppTranslator;
-import app.nekogram.translator.LingoTranslator;
-import app.nekogram.translator.MicrosoftTranslator;
-import app.nekogram.translator.SogouTranslator;
-import app.nekogram.translator.TranSmartTranslator;
-import app.nekogram.translator.YandexTranslator;
-import app.nekogram.translator.YouDaoTranslator;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.translator.html.HTMLKeeper;
+import com.fylnx.lelegram.vendor.translator.BaiduTranslator;
+import com.fylnx.lelegram.vendor.translator.BaseTranslator;
+import com.fylnx.lelegram.vendor.translator.DeepLTranslator;
+import com.fylnx.lelegram.vendor.translator.GoogleAppTranslator;
+import com.fylnx.lelegram.vendor.translator.LingoTranslator;
+import com.fylnx.lelegram.vendor.translator.MicrosoftTranslator;
+import com.fylnx.lelegram.vendor.translator.SogouTranslator;
+import com.fylnx.lelegram.vendor.translator.TranSmartTranslator;
+import com.fylnx.lelegram.vendor.translator.YandexTranslator;
+import com.fylnx.lelegram.vendor.translator.YouDaoTranslator;
 
 public class TextWithEntitiesTranslator implements Translator.ITranslator {
 

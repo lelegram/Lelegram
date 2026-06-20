@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.SparseIntArray;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.R;
@@ -15,14 +16,13 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import com.fylnx.lelegram.LeleConfig;
-import com.fylnx.lelegram.helpers.PreferenceMigrationHelper;
 
 public class ForwardItem {
     public static final int ID_FORWARD = -100;
     public static final int ID_FORWARD_NOQUOTE = -101;
     public static final int ID_FORWARD_NOCAPTION = -102;
 
-    private static final SharedPreferences preferences = PreferenceMigrationHelper.migrate("leleforward", "nekoforward", Context.MODE_PRIVATE);
+    private static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleforward", Context.MODE_PRIVATE);
     public static int lastForwardOption = preferences.getInt("lastForwardOption", ForwardItem.ID_FORWARD);
 
     static final int[] ITEM_IDS = new int[]{

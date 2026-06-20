@@ -127,7 +127,7 @@ public class WebAppHelper {
             eventCallback.accept(warpInEvent("config", data).toString());
         } else if (event.equals("set_config")) {
             var data = eventObject.get("data").getAsJsonObject();
-            SharedPreferences preferences = PreferenceMigrationHelper.migrate("leleconfig", "nekoconfig", Activity.MODE_PRIVATE);
+            SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleconfig", Activity.MODE_PRIVATE);
             SharedPreferences.Editor editor = preferences.edit();
             switch (data.get("key").getAsString()) {
                 case "trust":

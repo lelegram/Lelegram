@@ -14,6 +14,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -39,13 +40,11 @@ import org.telegram.ui.TopicsFragment;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import com.fylnx.lelegram.helpers.PreferenceMigrationHelper;
-
 public class BackButtonMenuRecent {
 
     private static final int MAX_RECENT_DIALOGS = 25;
 
-    private static final SharedPreferences preferences = PreferenceMigrationHelper.migrate("lelerecentdialogs", "nekorecentdialogs", Context.MODE_PRIVATE);
+    private static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("lelerecentdialogs", Context.MODE_PRIVATE);
     private static final SparseArray<LinkedList<Long>> recentDialogs = new SparseArray<>();
 
     public static void show(int currentAccount, BaseFragment fragment, View button, DialogsActivity.DialogsActivityDelegate delegate) {

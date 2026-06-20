@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.Base64;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
@@ -15,7 +16,7 @@ import org.telegram.ui.LaunchActivity;
 import java.nio.charset.StandardCharsets;
 
 public class PasscodeHelper {
-    private static final SharedPreferences preferences = PreferenceMigrationHelper.migrate("lelepasscode", "nekopasscode", Context.MODE_PRIVATE);
+    private static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("lelepasscode", Context.MODE_PRIVATE);
 
     public static boolean checkPasscode(Activity activity, String passcode) {
         if (hasPasscodeForAccount(Integer.MAX_VALUE)) {

@@ -139,7 +139,7 @@ public class LinkManager {
             return handleNewBot(second, segments.size() >= 3 ? segments.get(2) : null, uri.getQueryParameter("name"));
         }
 
-        if ("lelesettings".equals(first) || "nekosettings".equals(first)) {
+        if ("lelesettings".equals(first)) {
             SettingsHelper.processDeepLink(uri, this::presentFragment,
                     () -> getBulletinFactory().createErrorBulletin(LocaleController.getString(R.string.UnknownLeleSettingsOption)).show(), progress);
             return true;

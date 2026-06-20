@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
@@ -43,11 +44,9 @@ import com.fylnx.lelegram.LeleConfig;
 public class CloudSettingsHelper {
     private static final int CONFIG_VERSION = 0;
     private static final String CLOUD_SETTINGS_KEY = "lele_settings";
-    private static final String LEGACY_CLOUD_SETTINGS_KEY = "neko_settings";
     private static final String CLOUD_SETTINGS_UPDATED_AT_KEY = "lele_settings_updated_at";
-    private static final String LEGACY_CLOUD_SETTINGS_UPDATED_AT_KEY = "neko_settings_updated_at";
 
-    private final SharedPreferences preferences = PreferenceMigrationHelper.migrate("lelecloud", "nekocloud", Context.MODE_PRIVATE);
+    private final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("lelecloud", Context.MODE_PRIVATE);
     private final long[] cloudSyncedDate = new long[UserConfig.MAX_ACCOUNT_COUNT];
     private final Handler handler = new Handler();
     private final Runnable cloudSyncRunnable = () -> CloudSettingsHelper.getInstance().syncToCloud((success, error) -> {
@@ -98,7 +97,7 @@ public class CloudSettingsHelper {
         syncedDate.setOutAnimation(context, R.anim.alpha_out);
         syncedDate.setText(formatSyncedDate(), false);
 
-        getCloudItemCompat(CLOUD_SETTINGS_UPDATED_AT_KEY, LEGACY_CLOUD_SETTINGS_UPDATED_AT_KEY, (res, error) -> {
+        getCloudStorageHelper().getItem(CLOUD_SETTINGS_UPDATED_AT_KEY, (res, error) -> {
             if (error == null && AndroidUtilities.isNumeric(res)) {
                 cloudSyncedDate[selectedAccount] = Long.parseLong(res);
             } else {
@@ -175,8 +174,6 @@ public class CloudSettingsHelper {
             if (error == null) {
                 localSyncedDate = cloudSyncedDate[UserConfig.selectedAccount] = System.currentTimeMillis();
                 getCloudStorageHelper().setItem(CLOUD_SETTINGS_UPDATED_AT_KEY, String.valueOf(localSyncedDate), null);
-                getCloudStorageHelper().setItem(LEGACY_CLOUD_SETTINGS_KEY, payload, null);
-                getCloudStorageHelper().setItem(LEGACY_CLOUD_SETTINGS_UPDATED_AT_KEY, String.valueOf(localSyncedDate), null);
                 preferences.edit().putLong("updated_at", localSyncedDate).apply();
                 callback.run(true, null);
             } else {
@@ -186,7 +183,7 @@ public class CloudSettingsHelper {
     }
 
     private void restoreFromCloud(Utilities.Callback2<Boolean, String> callback) {
-        getCloudItemCompat(CLOUD_SETTINGS_KEY, LEGACY_CLOUD_SETTINGS_KEY, (res, error) -> {
+        getCloudStorageHelper().getItem(CLOUD_SETTINGS_KEY, (res, error) -> {
             if (error == null) {
                 if (TextUtils.isEmpty(res)) {
                     callback.run(false, "EMPTY_CONFIG");
@@ -209,21 +206,6 @@ public class CloudSettingsHelper {
             } else {
                 callback.run(false, error);
             }
-        });
-    }
-
-    private void getCloudItemCompat(String key, String legacyKey, Utilities.Callback2<String, String> callback) {
-        getCloudStorageHelper().getItem(key, (res, error) -> {
-            if (error != null || !TextUtils.isEmpty(res)) {
-                callback.run(res, error);
-                return;
-            }
-            getCloudStorageHelper().getItem(legacyKey, (legacyRes, legacyError) -> {
-                if (legacyError == null && !TextUtils.isEmpty(legacyRes)) {
-                    getCloudStorageHelper().setItem(key, legacyRes, null);
-                }
-                callback.run(legacyRes, legacyError);
-            });
         });
     }
 

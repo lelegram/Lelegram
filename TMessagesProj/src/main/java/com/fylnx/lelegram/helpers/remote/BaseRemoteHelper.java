@@ -9,6 +9,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.LocaleController;
@@ -27,10 +28,9 @@ import java.util.List;
 import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.InlineBotHelper;
-import com.fylnx.lelegram.helpers.PreferenceMigrationHelper;
 
 public abstract class BaseRemoteHelper {
-    protected static final SharedPreferences preferences = PreferenceMigrationHelper.migrate("leleremoteconfig", "nekoremoteconfig", Activity.MODE_PRIVATE);
+    protected static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleremoteconfig", Activity.MODE_PRIVATE);
     public static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
     protected MessagesController getMessagesController() {

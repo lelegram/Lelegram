@@ -59,7 +59,7 @@ public class EmojiHelper {
 
     private final HashMap<String, Typeface> typefaceCache = new HashMap<>();
     private final ArrayList<EmojiPack> emojiPacksInfo = new ArrayList<>();
-    private final SharedPreferences preferences = PreferenceMigrationHelper.migrate("leleemojis", "nekoemojis", Context.MODE_PRIVATE);
+    private final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleemojis", Context.MODE_PRIVATE);
 
     private String emojiPack;
     private Bitmap systemEmojiPreview;

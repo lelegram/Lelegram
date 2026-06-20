@@ -10,7 +10,7 @@ import org.telegram.ui.Components.TranslateAlert2;
 import java.io.IOException;
 import java.util.List;
 
-import app.nekogram.translator.GoogleAppTranslator;
+import com.fylnx.lelegram.vendor.translator.GoogleAppTranslator;
 
 public class TelegramTranslator implements Translator.ITranslator {
 
