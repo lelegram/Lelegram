@@ -2,14 +2,18 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,31 +26,45 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fylnx.lelegram.helpers.MessageHelper;
 
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.BuildVars;
+import org.telegram.messenger.DialogObject;
+import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
+import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
+import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BackgroundGradientDrawable;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-public class LeleRecallMessagesActivity extends BaseFragment {
+public class LeleRecallMessagesActivity extends BaseFragment implements DialogsActivity.DialogsActivityDelegate {
+
+    private static final int ACTION_COPY = 0;
+    private static final int ACTION_FORWARD = 1;
+    private static final int ACTION_SAVE_TO_DOWNLOADS = 2;
 
     private final ArrayList<MessageObject> messages = new ArrayList<>();
     private RecyclerListView listView;
     private LinearLayoutManager layoutManager;
+    private MessageObject pendingForwardMessage;
 
     public LeleRecallMessagesActivity(ArrayList<MessageObject> recalledMessages) {
         if (recalledMessages != null) {
@@ -87,6 +105,14 @@ public class LeleRecallMessagesActivity extends BaseFragment {
         listView.setLayoutManager(layoutManager = new LinearLayoutManager(context));
         layoutManager.setStackFromEnd(true);
         listView.setAdapter(new MessagesAdapter(context));
+        listView.setOnItemLongClickListener((view, position, x, y) -> {
+            if (position < 0 || position >= messages.size()) {
+                return false;
+            }
+            MessageObject message = view instanceof ChatMessageCell ? ((ChatMessageCell) view).getMessageObject() : null;
+            showMessageActions(message != null ? message : messages.get(position));
+            return true;
+        });
         frameLayout.addView(listView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         listView.post(() -> {
@@ -241,6 +267,11 @@ public class LeleRecallMessagesActivity extends BaseFragment {
                 }
 
                 @Override
+                public void didLongPress(ChatMessageCell cell, float x, float y) {
+                    showMessageActions(cell.getMessageObject());
+                }
+
+                @Override
                 public boolean needPlayMessage(ChatMessageCell cell, MessageObject messageObject, boolean muted) {
                     if (messageObject == null) {
                         return false;
@@ -271,6 +302,255 @@ public class LeleRecallMessagesActivity extends BaseFragment {
             cell.setMessageObject(message, null, canPinToPrevious(next, message), canPinToPrevious(previous, message), position == 0, position == messages.size() - 1);
             cell.setHighlighted(false);
         }
+    }
+
+    private void showMessageActions(MessageObject message) {
+        if (message == null || message.messageOwner == null || getParentActivity() == null) {
+            return;
+        }
+        ArrayList<CharSequence> items = new ArrayList<>();
+        ArrayList<Integer> icons = new ArrayList<>();
+        ArrayList<Integer> actions = new ArrayList<>();
+
+        if (canCopyMessage(message)) {
+            items.add(LocaleController.getString(R.string.Copy));
+            icons.add(R.drawable.msg_copy);
+            actions.add(ACTION_COPY);
+        }
+        items.add(LocaleController.getString(R.string.Forward));
+        icons.add(R.drawable.msg_forward);
+        actions.add(ACTION_FORWARD);
+
+        if (canSaveToDownloads(message)) {
+            items.add(LocaleController.getString(R.string.SaveToDownloads));
+            icons.add(R.drawable.msg_download);
+            actions.add(ACTION_SAVE_TO_DOWNLOADS);
+        }
+        if (items.isEmpty()) {
+            return;
+        }
+
+        BottomSheet.Builder builder = new BottomSheet.Builder(getParentActivity(), false, getResourceProvider());
+        builder.setItems(items.toArray(new CharSequence[0]), toIntArray(icons), (dialog, which) -> {
+            dialog.dismiss();
+            if (which < 0 || which >= actions.size()) {
+                return;
+            }
+            int action = actions.get(which);
+            if (action == ACTION_COPY) {
+                copyMessage(message);
+            } else if (action == ACTION_FORWARD) {
+                forwardMessage(message);
+            } else if (action == ACTION_SAVE_TO_DOWNLOADS) {
+                saveMessageToDownloads(message);
+            }
+        });
+        showDialog(builder.create());
+    }
+
+    private int[] toIntArray(ArrayList<Integer> items) {
+        int[] result = new int[items.size()];
+        for (int i = 0; i < items.size(); i++) {
+            result[i] = items.get(i);
+        }
+        return result;
+    }
+
+    private boolean canCopyMessage(MessageObject message) {
+        return !TextUtils.isEmpty(getCopyText(message));
+    }
+
+    private CharSequence getCopyText(MessageObject message) {
+        if (message == null || message.messageOwner == null) {
+            return null;
+        }
+        if (message.isDice()) {
+            return message.getDiceEmoji();
+        }
+        if (message.richLayout != null && !TextUtils.isEmpty(message.richLayout.joinedText)) {
+            return message.richLayout.joinedText;
+        }
+        CharSequence caption = ChatActivity.getMessageCaption(message, null, null);
+        if (!TextUtils.isEmpty(caption)) {
+            return caption;
+        }
+        CharSequence content = ChatActivity.getMessageContent(message, 0, false);
+        return TextUtils.isEmpty(content) ? null : content;
+    }
+
+    private void copyMessage(MessageObject message) {
+        CharSequence text = getCopyText(message);
+        if (TextUtils.isEmpty(text)) {
+            return;
+        }
+        AndroidUtilities.addToClipboard(text.toString());
+        BulletinFactory.of(this).createCopyBulletin(LocaleController.getString(R.string.TextCopied), getResourceProvider()).show();
+    }
+
+    private void forwardMessage(MessageObject message) {
+        if (message == null || message.messageOwner == null || getParentActivity() == null) {
+            return;
+        }
+        pendingForwardMessage = message;
+        Bundle args = new Bundle();
+        args.putBoolean("onlySelect", true);
+        args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_FORWARD);
+        args.putInt("messagesCount", 1);
+        args.putInt("hasPoll", message.isTodo() ? 3 : message.isPoll() ? (message.isPublicPoll() ? 2 : 1) : 0);
+        args.putBoolean("hasInvoice", message.isInvoice());
+        args.putBoolean("canSelectTopics", true);
+        DialogsActivity fragment = new DialogsActivity(args);
+        fragment.setDelegate(this);
+        presentFragment(fragment);
+    }
+
+    @Override
+    public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment) {
+        if (pendingForwardMessage == null || dids == null || dids.isEmpty()) {
+            return false;
+        }
+        MessageObject messageToForward = pendingForwardMessage;
+        for (int i = 0; i < dids.size(); i++) {
+            long dialogId = dids.get(i).dialogId;
+            TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
+            if (chat != null) {
+                int sendError = org.telegram.messenger.SendMessagesHelper.canSendMessageToChat(chat, messageToForward);
+                if (sendError != 0) {
+                    AlertsCreator.showSendMediaAlert(sendError, fragment, getResourceProvider());
+                    return false;
+                }
+            }
+        }
+        for (int i = 0; i < dids.size(); i++) {
+            long dialogId = dids.get(i).dialogId;
+            getSendMessagesHelper().processForwardFromMyName(messageToForward, dialogId, 0, 0, null);
+        }
+        pendingForwardMessage = null;
+        fragment.finishFragment();
+        showForwardedBulletin(dids);
+        return true;
+    }
+
+    private void showForwardedBulletin(ArrayList<MessagesStorage.TopicKey> dids) {
+        if (dids == null || dids.isEmpty() || getParentActivity() == null) {
+            return;
+        }
+        if (dids.size() == 1) {
+            long dialogId = dids.get(0).dialogId;
+            if (BulletinFactory.of(this).showForwardedBulletinWithTag(dialogId, 1)) {
+                return;
+            }
+            CharSequence text;
+            if (dialogId == getUserConfig().getClientUserId()) {
+                text = LocaleController.getString(R.string.FwdMessageToSavedMessages);
+            } else if (DialogObject.isChatDialog(dialogId)) {
+                TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
+                text = LocaleController.formatString("FwdMessageToGroup", R.string.FwdMessageToGroup, chat != null ? chat.title : "");
+            } else {
+                TLRPC.User user = getMessagesController().getUser(dialogId);
+                text = LocaleController.formatString("FwdMessageToUser", R.string.FwdMessageToUser, user != null ? UserObject.getFirstName(user) : "");
+            }
+            BulletinFactory.of(this).createSimpleBulletin(R.raw.forward, AndroidUtilities.replaceTags(text)).show();
+        } else {
+            BulletinFactory.of(this).createSimpleBulletin(R.raw.forward, AndroidUtilities.replaceTags(LocaleController.formatPluralString("FwdMessageToManyChats", dids.size(), dids.size()))).show();
+        }
+    }
+
+    private boolean canSaveToDownloads(MessageObject message) {
+        return message != null
+                && !message.isVoiceOnce()
+                && !message.isRoundOnce()
+                && (message.isDocument()
+                || message.isMusic()
+                || message.isPhoto()
+                || message.isVideo()
+                || message.isGif()
+                || message.isLivePhoto());
+    }
+
+    private void saveMessageToDownloads(MessageObject message) {
+        if (message == null || message.messageOwner == null || getParentActivity() == null) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 23
+                && (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE)
+                && getParentActivity().checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            getParentActivity().requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 4);
+            return;
+        }
+
+        if (message.isMusic() || message.isDocument() || message.isLivePhoto()) {
+            ArrayList<MessageObject> messageObjects = new ArrayList<>();
+            messageObjects.add(message);
+            final boolean isMusic = message.isMusic();
+            final boolean isLivePhoto = message.isLivePhoto();
+            MediaController.saveFilesFromMessages(getParentActivity(), getAccountInstance(), messageObjects, count -> {
+                if (getParentActivity() == null || fragmentView == null || count <= 0) {
+                    return;
+                }
+                BulletinFactory.FileType fileType = isLivePhoto ? BulletinFactory.FileType.LIVEPHOTO : isMusic ? BulletinFactory.FileType.AUDIO : BulletinFactory.FileType.UNKNOWN;
+                BulletinFactory.of(this).createDownloadBulletin(fileType, count, getResourceProvider()).show();
+            });
+            return;
+        }
+
+        String path = getExistingFilePath(message);
+        if (TextUtils.isEmpty(path)) {
+            BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.PleaseDownload), getResourceProvider()).show();
+            return;
+        }
+        boolean photo = message.isPhoto();
+        boolean video = message.isVideo();
+        boolean gif = message.isGif();
+        String fileName = FileLoader.getDocumentFileName(message.getDocument());
+        if (TextUtils.isEmpty(fileName)) {
+            fileName = message.getFileName();
+        }
+        MediaController.saveFile(path, getParentActivity(), 2, fileName, message.getMimeType(), uri -> {
+            if (getParentActivity() == null) {
+                return;
+            }
+            BulletinFactory.FileType fileType;
+            if (photo) {
+                fileType = BulletinFactory.FileType.PHOTO_TO_DOWNLOADS;
+            } else if (video) {
+                fileType = BulletinFactory.FileType.VIDEO_TO_DOWNLOADS;
+            } else if (gif) {
+                fileType = BulletinFactory.FileType.GIF_TO_DOWNLOADS;
+            } else {
+                fileType = BulletinFactory.FileType.UNKNOWN;
+            }
+            BulletinFactory.of(this).createDownloadBulletin(fileType, getResourceProvider()).show();
+        });
+    }
+
+    private String getExistingFilePath(MessageObject message) {
+        String path = message.messageOwner.attachPath;
+        if (!TextUtils.isEmpty(path)) {
+            File temp = new File(path);
+            if (!temp.exists()) {
+                path = null;
+            }
+        }
+        if (TextUtils.isEmpty(path)) {
+            File file = FileLoader.getInstance(currentAccount).getPathToMessage(message.messageOwner);
+            if (file != null && file.exists()) {
+                path = file.getPath();
+            }
+        }
+        if (TextUtils.isEmpty(path) && message.cachedQuality != null && message.cachedQuality.isCached()) {
+            File file = new File(message.cachedQuality.uri.getPath());
+            if (file.exists()) {
+                path = file.getPath();
+            }
+        }
+        if (TextUtils.isEmpty(path) && message.qualityToSave != null) {
+            File file = FileLoader.getInstance(currentAccount).getPathToAttach(message.qualityToSave, null, false, true);
+            if (file != null && file.exists()) {
+                path = file.getPath();
+            }
+        }
+        return path;
     }
 
     @SuppressLint("ViewConstructor")
