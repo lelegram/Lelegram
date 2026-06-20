@@ -25456,7 +25456,58 @@ public class ChatActivity extends BaseFragment implements
         }
         removeLeleRecallMessagesFromGroups(run);
         syncLeleRecallPromptIndexes(prompt);
+        syncLeleRecallDialogPreview(prompt);
         return prompt;
+    }
+
+    private void syncLeleRecallDialogPreview(MessageObject prompt) {
+        if (prompt == null || prompt.leleRecalledMessages == null || prompt.leleRecalledMessages.isEmpty()) {
+            return;
+        }
+        long previewDialogId = prompt.getDialogId();
+        TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(previewDialogId);
+        if (dialog == null || dialog.top_message == 0) {
+            return;
+        }
+        MessageObject topMessage = null;
+        for (int i = 0; i < prompt.leleRecalledMessages.size(); i++) {
+            MessageObject messageObject = prompt.leleRecalledMessages.get(i);
+            if (messageObject != null && messageObject.getId() == dialog.top_message) {
+                topMessage = messageObject;
+                break;
+            }
+        }
+        if (topMessage == null) {
+            return;
+        }
+        ArrayList<MessageObject> previewMessages = new ArrayList<>(prompt.leleRecalledMessages.size());
+        previewMessages.add(topMessage);
+        for (int i = 0; i < prompt.leleRecalledMessages.size(); i++) {
+            MessageObject messageObject = prompt.leleRecalledMessages.get(i);
+            if (messageObject != null && messageObject.getId() != topMessage.getId()) {
+                previewMessages.add(messageObject);
+            }
+        }
+        if (isSameLeleRecallDialogPreview(previewDialogId, previewMessages)) {
+            return;
+        }
+        getMessagesController().dialogMessage.put(previewDialogId, previewMessages);
+        getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+    }
+
+    private boolean isSameLeleRecallDialogPreview(long dialogId, ArrayList<MessageObject> previewMessages) {
+        ArrayList<MessageObject> currentPreviewMessages = getMessagesController().dialogMessage.get(dialogId);
+        if (currentPreviewMessages == null || currentPreviewMessages.size() != previewMessages.size()) {
+            return false;
+        }
+        for (int i = 0; i < previewMessages.size(); i++) {
+            MessageObject currentMessage = currentPreviewMessages.get(i);
+            MessageObject previewMessage = previewMessages.get(i);
+            if (currentMessage == null || previewMessage == null || currentMessage.getId() != previewMessage.getId()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private long getChannelIdForLoadIndex(int loadIndex) {

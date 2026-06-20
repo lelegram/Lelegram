@@ -148,6 +148,7 @@ import java.util.Stack;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.accessibility.AccConfig;
 import com.fylnx.lelegram.helpers.MessageFilterHelper;
+import com.fylnx.lelegram.helpers.MessageHelper;
 import me.vkryl.android.animator.BoolAnimator;
 
 public class DialogCell extends BaseCell implements StoriesListPlaceProvider.AvatarOverlaysView {
@@ -1468,7 +1469,13 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 }
                 messageString = formatTopicsNames();
                 String restrictionReason = message != null ? MessagesController.getInstance(message.currentAccount).getRestrictionReason(message.messageOwner.restriction_reason) : null;
-                buttonString = message != null ? getMessageStringFormatted(messageFormatType, restrictionReason, messageNameString, true) : "";
+                if (isLeleRecallPreviewSource(message)) {
+                    applyName = false;
+                    buttonString = getLeleRecallPreviewText();
+                    currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
+                } else {
+                    buttonString = message != null ? getMessageStringFormatted(messageFormatType, restrictionReason, messageNameString, true) : "";
+                }
                 if (applyName && buttonString.length() >= 0 && messageNameString != null) {
                     SpannableStringBuilder spannableStringBuilder = SpannableStringBuilder.valueOf(buttonString);
                     spannableStringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_name, resourcesProvider), 0, Math.min(spannableStringBuilder.length(), messageNameString.length() + 1), 0);
@@ -1612,6 +1619,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                         }
                         if (lastMessageIsReaction) {
 
+                        } else if (isLeleRecallPreviewSource(message)) {
+                            messageString = getLeleRecallPreviewText();
+                            currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                         } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO) {
                             if (chat != null) {
                                 if (ChatObject.isChannel(chat) && !chat.megagroup) {
@@ -5450,8 +5460,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         }
         if (encryptedChat == null) {
             StringBuilder messageString = new StringBuilder();
-            messageString.append(message.messageText);
-            if (!message.isMediaEmpty()) {
+            if (isLeleRecallPreviewSource(message)) {
+                messageString.append(getLeleRecallPreviewText());
+            } else {
+                messageString.append(message.messageText);
+            }
+            if (!isLeleRecallPreviewSource(message) && !message.isMediaEmpty()) {
                 MessageObject captionMessage = getCaptionMessage();
                 if (captionMessage != null && !TextUtils.isEmpty(captionMessage.caption)) {
                     if (messageString.length() > 0) {
@@ -5464,6 +5478,60 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         }
         event.setContentDescription(sb);
         setContentDescription(sb);
+    }
+
+    private boolean isLeleRecallPreviewSource(MessageObject messageObject) {
+        return LeleConfig.keepDeletedMessages
+                && messageObject != null
+                && !messageObject.isLeleRecallPrompt()
+                && !messageObject.isDateObject
+                && messageObject.contentType != 2
+                && messageObject.messageOwner != null
+                && (messageObject.deleted || messageObject.messageOwner.deleted);
+    }
+
+    private CharSequence getLeleRecallPreviewText() {
+        ArrayList<MessageObject> recalledMessages = getLeleRecallPreviewMessages();
+        if (recalledMessages == null || recalledMessages.isEmpty()) {
+            return "";
+        }
+        return MessageHelper.createRecallPromptText(currentAccount, recalledMessages);
+    }
+
+    private ArrayList<MessageObject> getLeleRecallPreviewMessages() {
+        if (!isLeleRecallPreviewSource(message)) {
+            return null;
+        }
+        ArrayList<MessageObject> recalledMessages = new ArrayList<>();
+        recalledMessages.add(message);
+        if (groupMessages != null) {
+            for (int i = 0; i < groupMessages.size(); i++) {
+                MessageObject groupedMessage = groupMessages.get(i);
+                if (groupedMessage == null
+                        || groupedMessage == message
+                        || groupedMessage.getId() == message.getId()
+                        || !isLeleRecallPreviewSource(groupedMessage)
+                        || groupedMessage.getDialogId() != message.getDialogId()
+                        || groupedMessage.getSenderId() != message.getSenderId()) {
+                    continue;
+                }
+                recalledMessages.add(groupedMessage);
+            }
+        }
+        return recalledMessages;
+    }
+
+    private int getLeleRecallPreviewHash() {
+        ArrayList<MessageObject> recalledMessages = getLeleRecallPreviewMessages();
+        if (recalledMessages == null || recalledMessages.isEmpty()) {
+            return 0;
+        }
+        int hash = 1;
+        for (int i = 0; i < recalledMessages.size(); i++) {
+            MessageObject recalledMessage = recalledMessages.get(i);
+            hash = 31 * hash + (recalledMessage == null ? 0 : recalledMessage.getId());
+        }
+        return hash;
     }
 
     private MessageObject getCaptionMessage() {
@@ -6030,7 +6098,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 }
                 return false;
             }
-            int messageHash = message == null ? 0 : message.getId() + message.hashCode();
+            int messageHash = message == null ? 0 : message.getId() + message.hashCode() + getLeleRecallPreviewHash();
             Integer printingType = null;
             long readHash = dialog.read_inbox_max_id + ((long) dialog.read_outbox_max_id << 8) + ((long) (dialog.unread_count + (dialog.unread_mark ? -1 : 0)) << 16) +
                     (dialog.unread_reactions_count > 0 ? (1 << 18) : 0) +
