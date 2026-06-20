@@ -1714,6 +1714,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int open_direct = 70;
     private final static int remove_fee = 71;
     private final static int charge_fee = 72;
+    private final static int forward_no_source = 77;
 
     private final static int chat_menu_topic_create = 73;
 
@@ -3893,6 +3894,9 @@ public class ChatActivity extends BaseFragment implements
                         return;
                     }
                     createDeleteMessagesAlert(null, null);
+                } else if (id == forward_no_source) {
+                    setForwardParams(true, ForwardItem.hasCaption(getForwardingMessages()));
+                    openForward(true);
                 } else if (id == ForwardItem.ID_FORWARD || id == ForwardItem.ID_FORWARD_NOQUOTE || id == ForwardItem.ID_FORWARD_NOCAPTION) {
                     setForwardParams(id == ForwardItem.ID_FORWARD_NOQUOTE, id == ForwardItem.ID_FORWARD_NOCAPTION);
                     openForward(true);
@@ -10477,6 +10481,7 @@ public class ChatActivity extends BaseFragment implements
             actionModeViews.add(actionMode.addItemWithWidth(star, R.drawable.msg_fave, dp(48), LocaleController.getString(R.string.AddToFavorites)));
             actionModeViews.add(actionMode.addItemWithWidth(copy, R.drawable.msg_copy, dp(48), LocaleController.getString(R.string.Copy)));
             if (!isSavedMessages && getDialogId() != UserObject.VERIFY) {
+                actionModeViews.add(actionMode.addItemWithWidth(forward_no_source, new ForwardDrawable(ForwardItem.ID_FORWARD_NOQUOTE, false), dp(48), LocaleController.getString(R.string.NoQuoteForward)));
                 actionModeViews.add(actionMode.addItemWithWidth(forward, R.drawable.msg_forward, dp(48), LocaleController.getString(R.string.Forward)));
             }
             actionModeViews.add(actionMode.addItemWithWidth(share, R.drawable.msg_shareout, dp(48), LocaleController.getString(R.string.ShareFile)));
@@ -19478,6 +19483,7 @@ public class ChatActivity extends BaseFragment implements
                 ActionBarMenuItem copyItem = actionBar.createActionMode().getItem(copy);
                 ActionBarMenuItem starItem = actionBar.createActionMode().getItem(star);
                 ActionBarMenuItem editItem = actionBar.createActionMode().getItem(edit);
+                ActionBarMenuItem forwardNoSourceItem = actionBar.createActionMode().getItem(forward_no_source);
                 ActionBarMenuItem forwardItem = actionBar.createActionMode().getItem(forward);
                 ActionBarMenuItem forwardNoQuoteItem = actionBar.createActionMode().getItem(ForwardItem.ID_FORWARD_NOQUOTE);
                 ActionBarMenuItem deleteItem = actionBar.createActionMode().getItem(delete);
@@ -19490,6 +19496,9 @@ public class ChatActivity extends BaseFragment implements
                 }
                 if (forwardNoQuoteItem != null) {
                     forwardNoQuoteItem.setIcon(new ForwardDrawable(ForwardItem.ID_FORWARD_NOQUOTE, false));
+                }
+                if (forwardNoSourceItem != null) {
+                    forwardNoSourceItem.setIcon(new ForwardDrawable(ForwardItem.ID_FORWARD_NOQUOTE, false));
                 }
                 ActionBarMenuItem tagItem = actionBar.createActionMode().getItem(tag_message);
                 ActionBarMenuItem shareItem = actionBar.createActionMode().getItem(share);
@@ -19516,6 +19525,16 @@ public class ChatActivity extends BaseFragment implements
                             forwardItem.setBackground(null);
                         } else if (forwardItem.getBackground() == null) {
                             forwardItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 5));
+                        }
+                    }
+                    if (forwardNoSourceItem != null) {
+                        forwardNoSourceItem.setEnabled(cantForwardMessagesCount == 0 || noforwards);
+                        animators.add(ObjectAnimator.ofFloat(forwardNoSourceItem, View.ALPHA, cantForwardMessagesCount == 0 ? 1.0f : 0.5f));
+
+                        if (noforwards && forwardNoSourceItem.getBackground() != null) {
+                            forwardNoSourceItem.setBackground(null);
+                        } else if (forwardNoSourceItem.getBackground() == null) {
+                            forwardNoSourceItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 5));
                         }
                     }
                     if (forwardNoQuoteItem != null) {
@@ -19547,6 +19566,14 @@ public class ChatActivity extends BaseFragment implements
                         if (noforwards) {
                         } else if (forwardItem.getBackground() == null) {
                             forwardItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 3));
+                        }
+                    }
+                    if (forwardNoSourceItem != null) {
+                        forwardNoSourceItem.setEnabled(cantForwardMessagesCount == 0 || noforwards);
+                        forwardNoSourceItem.setAlpha(cantForwardMessagesCount == 0 ? 1.0f : 0.5f);
+                        if (noforwards) {
+                        } else if (forwardNoSourceItem.getBackground() == null) {
+                            forwardNoSourceItem.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 3));
                         }
                     }
                     if (forwardNoQuoteItem != null) {
@@ -19697,6 +19724,7 @@ public class ChatActivity extends BaseFragment implements
                 if (tagItem != null) {
                     tagItem.setVisibility(getUserConfig().isPremium() && (
                         (editItem != null && editItem.getVisibility() == View.VISIBLE ? 1 : 0) +
+                        (forwardNoSourceItem != null && forwardNoSourceItem.getVisibility() == View.VISIBLE ? 1 : 0) +
                         (forwardItem != null && forwardItem.getVisibility() == View.VISIBLE ? 1 : 0) +
                         (saveItem != null && saveItem.getVisibility() == View.VISIBLE ? 1 : 0) +
                         (copyItem != null && copyItem.getVisibility() == View.VISIBLE ? 1 : 0) +
