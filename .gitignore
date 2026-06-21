@@ -1,30 +1,60 @@
+# IDE and editor state
 .idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+
+# Gradle, Android, Kotlin, and native build output
 .gradle/
 build/
 obj/
-*.iml
-local.properties
-TMessagesProj/.cxx/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
 TMessagesProj/jniLibs/
 TMessagesProj/jniRes/
-**/.DS_Store
 TMessagesProj/afat/
 TMessagesProj_App/afat/
 TMessagesProj_AppHockeyApp/afat/
 TMessagesProj_AppStandalone/afat/
 TMessagesProj_AppHuawei/afat/
-/TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java
+
+# Local Android/Firebase/Sentry configuration and secrets
+local.properties
 google-services.json
 sentry.properties
-docs/
-java_pid45800.hprof
+/TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Build artifacts, logs, and JVM dumps
+*.apk
+*.aab
+*.ap_
+*.log
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# OS files
+**/.DS_Store
+Thumbs.db
+
+# Local agent, spec, and helper artifacts
 AGENTS.md
+docs/
 openspec/
 .codex/
-*.bat
 .codex-tmp/
 .omc/
 .serena/
 .codegraph/
+*.bat
 nul
-*.log
