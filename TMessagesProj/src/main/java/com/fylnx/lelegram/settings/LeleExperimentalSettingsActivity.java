@@ -11,7 +11,6 @@ import org.telegram.ui.Components.UniversalAdapter;
 
 import java.util.ArrayList;
 
-import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.PopupHelper;
 
@@ -41,9 +40,7 @@ public class LeleExperimentalSettingsActivity extends BaseLeleSettingsActivity {
         items.add(UItem.asCheck(autoInlineBotRow, LocaleController.getString(R.string.AutoInlineBot), LocaleController.getString(R.string.AutoInlineBotDesc)).slug("autoInlineBot").setChecked(LeleConfig.autoInlineBot));
         items.add(UItem.asCheck(forceFontWeightFallbackRow, LocaleController.getString(R.string.ForceFontWeightFallback)).slug("forceFontWeightFallback").setChecked(LeleConfig.forceFontWeightFallback));
         items.add(UItem.asCheck(mapDriftingFixRow, LocaleController.getString(R.string.MapDriftingFix)).slug("mapDriftingFix").setChecked(LeleConfig.mapDriftingFix));
-        if (Extra.isDirectApp()) {
-            items.add(UItem.asCheck(contentRestrictionRow, LocaleController.getString(R.string.IgnoreContentRestriction)).slug("contentRestriction").setChecked(LeleConfig.ignoreContentRestriction));
-        }
+        items.add(UItem.asCheck(contentRestrictionRow, LocaleController.getString(R.string.IgnoreContentRestriction)).slug("contentRestriction").setChecked(LeleConfig.ignoreContentRestriction));
         items.add(UItem.asCheck(showRPCErrorRow, LocaleController.getString(R.string.ShowRPCError), LocaleController.formatString(R.string.ShowRPCErrorException, "FILE_REFERENCE_EXPIRED")).slug("showRPCError").setChecked(LeleConfig.showRPCError));
         items.add(UItem.asShadow(null));
     }

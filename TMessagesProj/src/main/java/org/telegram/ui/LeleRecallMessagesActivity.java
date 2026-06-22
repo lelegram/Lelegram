@@ -30,6 +30,7 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessageObject;
@@ -97,7 +98,7 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
         fragmentView = new WallpaperFrameLayout(context);
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        listView = new RecyclerListView(context);
+        listView = new RecalledMessagesListView(context);
         listView.setClipToPadding(false);
         listView.setPadding(0, dp(8), 0, dp(12));
         listView.setVerticalScrollBarEnabled(false);
@@ -203,7 +204,8 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
         return media != null
                 && !(media instanceof TLRPC.TL_messageMediaEmpty)
                 && !(media instanceof TLRPC.TL_messageMediaWebPage)
-                && !MessageHelper.isRecallMediaOpenable(source);
+                && !MessageHelper.isRecallMediaOpenable(source)
+                && !MessageHelper.isRecallMediaAvailable(source);
     }
 
     private boolean canPinToPrevious(MessageObject previous, MessageObject current) {
@@ -231,7 +233,7 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
             return;
         }
         long dialogId = message.type != 0 ? message.getDialogId() : 0;
-        PhotoViewer.getInstance().openPhoto(mediaMessages, index, dialogId, 0, 0, new PhotoViewer.EmptyPhotoViewerProvider());
+        PhotoViewer.getInstance().openPhoto(mediaMessages, index, dialogId, 0, 0, new RecallPhotoViewerProvider());
     }
 
     private class MessagesAdapter extends RecyclerListView.SelectionAdapter {
@@ -254,7 +256,7 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            ChatMessageCell cell = new ChatMessageCell(context, currentAccount, false, null, getResourceProvider());
+            ChatMessageCell cell = new ChatMessageCell(context, currentAccount, true, null, getResourceProvider());
             cell.setDelegate(new ChatMessageCell.ChatMessageCellDelegate() {
                 @Override
                 public boolean canPerformActions() {
@@ -297,11 +299,15 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
             ChatMessageCell cell = (ChatMessageCell) holder.itemView;
             MessageObject previous = position > 0 ? messages.get(position - 1) : null;
             MessageObject next = position < messages.size() - 1 ? messages.get(position + 1) : null;
-            cell.isChat = message.getDialogId() < 0;
+            cell.isChat = shouldShowAuthor(message);
             cell.setFullyDraw(true);
             cell.setMessageObject(message, null, canPinToPrevious(next, message), canPinToPrevious(previous, message), position == 0, position == messages.size() - 1);
             cell.setHighlighted(false);
         }
+    }
+
+    private static boolean shouldShowAuthor(MessageObject message) {
+        return message != null && message.getDialogId() < 0;
     }
 
     private void showMessageActions(MessageObject message) {
@@ -551,6 +557,91 @@ public class LeleRecallMessagesActivity extends BaseFragment implements DialogsA
             }
         }
         return path;
+    }
+
+    private class RecallPhotoViewerProvider extends PhotoViewer.EmptyPhotoViewerProvider {
+
+        @Override
+        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview, boolean closing) {
+            if (listView == null || messageObject == null) {
+                return null;
+            }
+            for (int i = 0; i < listView.getChildCount(); i++) {
+                View view = listView.getChildAt(i);
+                if (!(view instanceof ChatMessageCell cell)) {
+                    continue;
+                }
+                MessageObject cellMessage = cell.getMessageObject();
+                if (cellMessage == null || cellMessage.getId() != messageObject.getId() || cellMessage.getDialogId() != messageObject.getDialogId()) {
+                    continue;
+                }
+                ImageReceiver imageReceiver = cell.getPhotoImage(index);
+                if (imageReceiver == null) {
+                    return null;
+                }
+                int[] coords = new int[2];
+                view.getLocationInWindow(coords);
+                PhotoViewer.PlaceProviderObject object = new PhotoViewer.PlaceProviderObject();
+                object.viewX = coords[0];
+                object.viewY = coords[1] + view.getPaddingTop();
+                object.parentView = listView;
+                object.imageReceiver = imageReceiver;
+                object.radius = imageReceiver.getRoundRadius(true);
+                if (needPreview) {
+                    object.thumb = imageReceiver.getBitmapSafe();
+                }
+                return object;
+            }
+            return null;
+        }
+    }
+
+    private static class RecalledMessagesListView extends RecyclerListView {
+
+        private RecalledMessagesListView(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void dispatchDraw(Canvas canvas) {
+            super.dispatchDraw(canvas);
+            for (int i = 0; i < getChildCount(); i++) {
+                View child = getChildAt(i);
+                if (!(child instanceof ChatMessageCell cell)) {
+                    continue;
+                }
+                if (!shouldShowAuthor(cell.getMessageObject())) {
+                    continue;
+                }
+                ImageReceiver avatarImage = cell.getAvatarImage();
+                if (avatarImage == null) {
+                    continue;
+                }
+                int adapterPosition = getChildAdapterPosition(child);
+                boolean updateVisibility = cell.getMessageObject() != null && !cell.getMessageObject().deleted && adapterPosition != RecyclerView.NO_POSITION;
+                int top = child.getTop() + child.getPaddingTop();
+                int y = (int) (child.getY() + cell.getPaddingTopAnimated() + cell.getLayoutHeight() + cell.getTransitionParams().deltaBottom);
+                int maxY = getMeasuredHeight() - getPaddingBottom();
+                if (y > maxY) {
+                    y = maxY;
+                }
+                if (y - dp(48) < top) {
+                    y = top + dp(48);
+                }
+                if (!cell.drawPinnedBottom()) {
+                    int cellBottom = (int) (cell.getY() + cell.getMeasuredHeight() + cell.getDeltaBottom());
+                    if (y > cellBottom) {
+                        y = cellBottom;
+                    }
+                }
+                if (updateVisibility) {
+                    avatarImage.setImageY(y - dp(44));
+                    avatarImage.setVisible(true, false);
+                }
+                avatarImage.setAlpha(cell.getAlpha());
+                avatarImage.draw(canvas);
+            }
+        }
     }
 
     @SuppressLint("ViewConstructor")

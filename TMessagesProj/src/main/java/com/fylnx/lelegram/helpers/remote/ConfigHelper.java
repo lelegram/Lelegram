@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.LeleConfig;
 
 public class ConfigHelper extends BaseRemoteHelper {
@@ -60,15 +59,11 @@ public class ConfigHelper extends BaseRemoteHelper {
     private static List<News> getNews() {
         Config config = getInstance().getConfig();
         if (config == null || config.news == null) {
-            List<News> defaultNews = Extra.getDefaultNews();
-            return defaultNews != null ? defaultNews : Collections.emptyList();
+            return Collections.emptyList();
         }
         ArrayList<News> newsItems = new ArrayList<>();
         config.news.forEach(news -> {
             if (news.mcc != null && news.mcc != LeleConfig.userMcc) {
-                return;
-            }
-            if (news.direct != null && news.direct && !Extra.isDirectApp()) {
                 return;
             }
             if (news.source != null && news.source.equals(BuildConfig.BUILD_TYPE)) {

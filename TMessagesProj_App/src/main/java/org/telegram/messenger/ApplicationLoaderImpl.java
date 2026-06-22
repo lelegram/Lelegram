@@ -10,7 +10,6 @@ import org.telegram.ui.Components.UpdateAppAlertDialog;
 import org.telegram.ui.Components.UpdateLayout;
 import org.telegram.ui.IUpdateLayout;
 
-import com.fylnx.lelegram.Extra;
 
 public class ApplicationLoaderImpl extends ApplicationLoader {
     @Override
@@ -20,7 +19,7 @@ public class ApplicationLoaderImpl extends ApplicationLoader {
 
     @Override
     protected boolean isStandalone() {
-        return Extra.isDirectApp();
+        return false;
     }
 
     @Override

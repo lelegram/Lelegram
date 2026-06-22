@@ -16,8 +16,6 @@ import com.android.billingclient.api.ProductDetails;
 
 import java.util.Objects;
 
-import com.fylnx.lelegram.Extra;
-
 public class BuildVars {
 
     public static boolean DEBUG_VERSION = false;
@@ -40,7 +38,7 @@ public class BuildVars {
     public static String HUAWEI_APP_ID = "101184875";
 
     // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
-    public static boolean IS_BILLING_UNAVAILABLE = !Extra.isDirectApp();
+    public static boolean IS_BILLING_UNAVAILABLE = false;
 
     // works only on official app ids, disable on your forks
     public static boolean SUPPORTS_PASSKEYS = false;
@@ -48,9 +46,8 @@ public class BuildVars {
     public static boolean USE_LEGACY_SYSTEM_INSETS = false;
 
     static {
-        APP_ID = Extra.APP_ID;
-        APP_HASH = Extra.APP_HASH;
-        PLAYSTORE_APP_URL = Extra.PLAYSTORE_APP_URL;
+        APP_ID = BuildConfig.APP_ID;
+        APP_HASH = BuildConfig.APP_HASH;
         if (ApplicationLoader.applicationContext != null) {
             SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences("systemConfig", Context.MODE_PRIVATE);
             LOGS_ENABLED = DEBUG_VERSION || sharedPreferences.getBoolean("logsEnabled", DEBUG_VERSION);

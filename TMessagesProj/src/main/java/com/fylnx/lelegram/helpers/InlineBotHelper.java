@@ -10,9 +10,6 @@ import org.telegram.tgnet.TLRPC;
 
 import java.util.ArrayList;
 
-import com.fylnx.lelegram.Extra;
-import com.fylnx.lelegram.LeleConfig;
-
 public class InlineBotHelper extends BaseController {
 
     private static final InlineBotHelper[] Instance = new InlineBotHelper[UserConfig.MAX_ACCOUNT_COUNT];
@@ -85,12 +82,6 @@ public class InlineBotHelper extends BaseController {
     }
 
     public static String findBotForText(String s) {
-        if (!LeleConfig.autoInlineBot) return null;
-        var text = s.trim();
-        if (text.contains(" ")) return null;
-        if (text.startsWith("https://x.com/") || text.startsWith("https://twitter.com/")) {
-            return Extra.TWPIC_BOT_USERNAME;
-        }
         return null;
     }
 }

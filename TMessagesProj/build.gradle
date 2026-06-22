@@ -106,6 +106,46 @@ lsparanoid {
 
 def targetAbi = project.findProperty("targetAbi")?.toString()
 def buildTimeUtc = new Date().format("yyyy-M-d HH:mm", TimeZone.getTimeZone("UTC"))
+
+def firstNonBlank = { Object... values ->
+    values.collect { value -> value?.toString() }.find { value -> value != null && !value.isBlank() }
+}
+
+def resolveLeleSecret = { String key, String defaultValue ->
+    firstNonBlank(
+            project.findProperty("lele.${key.toLowerCase(Locale.ROOT)}"),
+            project.findProperty("LELE_${key}"),
+            System.getenv("LELE_${key}")
+    ) ?: defaultValue
+}
+
+def resolveLeleIntSecret = { String key, int defaultValue ->
+    def value = resolveLeleSecret(key, null)
+    if (value == null) {
+        return defaultValue
+    }
+    try {
+        return Integer.parseInt(value)
+    } catch (NumberFormatException ignored) {
+        throw new GradleException("LELE_${key} must be an integer.")
+    }
+}
+
+def javaStringLiteral = { String value ->
+    if (value == null) {
+        return "null"
+    }
+    def escaped = value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+            .replace("\t", "\\t")
+    return "\"${escaped}\""
+}
+
+def leleAppId = resolveLeleIntSecret("APP_ID", 0)
+def leleAppHash = resolveLeleSecret("APP_HASH", "")
 def loadSigningProperties() {
     Properties localProperties = new Properties()
     if (project.rootProject.file('local.properties').exists()) {
@@ -198,6 +238,8 @@ android {
             buildConfigField("String", "BUILD_TIME_UTC", "\"${buildTimeUtc}\"")
             buildConfigField("boolean", "DEBUG_PRIVATE_VERSION", "false")
             buildConfigField("boolean", "DEBUG_VERSION", "false")
+            buildConfigField("int", "APP_ID", "${leleAppId}")
+            buildConfigField("String", "APP_HASH", javaStringLiteral(leleAppHash))
         }
 
         release {
@@ -208,6 +250,8 @@ android {
             buildConfigField("String", "BUILD_TIME_UTC", "\"${buildTimeUtc}\"")
             buildConfigField("boolean", "DEBUG_PRIVATE_VERSION", "false")
             buildConfigField("boolean", "DEBUG_VERSION", "false")
+            buildConfigField("int", "APP_ID", "${leleAppId}")
+            buildConfigField("String", "APP_HASH", javaStringLiteral(leleAppHash))
         }
     }
     namespace 'org.telegram.messenger'

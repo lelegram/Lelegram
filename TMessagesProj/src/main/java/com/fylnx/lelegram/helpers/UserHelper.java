@@ -2,7 +2,6 @@ package com.fylnx.lelegram.helpers;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.text.TextUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BaseController;
@@ -18,8 +17,6 @@ import org.telegram.ui.TopicsFragment;
 
 import java.util.Locale;
 import java.util.function.Consumer;
-
-import com.fylnx.lelegram.Extra;
 
 public class UserHelper extends BaseController {
 
@@ -128,72 +125,13 @@ public class UserHelper extends BaseController {
     }
 
     private void searchUser(long userId, Consumer<TLRPC.User> callback, ParsedPeer parsedPeer, boolean fallback) {
-        searchPeer(Extra.getUserInfoBot(fallback), userId, String.valueOf(userId), fakeUser -> {
-            var user = getMessagesController().getUser(userId);
-            if (user != null) {
-                callback.accept(user);
-            } else if (parsedPeer != null) {
-                callback.accept(parsedPeer.toUser());
-            } else if (!fallback) {
-                searchUser(userId, callback, fakeUser, true);
-            } else if (fakeUser != null) {
-                callback.accept(fakeUser.toUser());
-            } else {
-                callback.accept(null);
-            }
-        });
+        callback.accept(parsedPeer != null ? parsedPeer.toUser() : null);
     }
 
     private void searchChat(long chatId, Consumer<TLRPC.Chat> callback, ParsedPeer parsedPeer, boolean fallback) {
-        searchPeer(Extra.getUserInfoBot(fallback), chatId, String.valueOf(-1000000000000L - chatId), fakeChat -> {
-            var chat = getMessagesController().getChat(chatId);
-            if (chat != null) {
-                callback.accept(chat);
-            } else if (parsedPeer != null) {
-                callback.accept(parsedPeer.toChat());
-            } else if (!fallback) {
-                searchChat(chatId, callback, fakeChat, true);
-            } else if (fakeChat != null) {
-                callback.accept(fakeChat.toChat());
-            } else {
-                callback.accept(null);
-            }
-        });
+        callback.accept(parsedPeer != null ? parsedPeer.toChat() : null);
     }
 
-    private void searchPeer(UserInfoBot botInfo, long id, String query, Consumer<ParsedPeer> callback) {
-        getInlineBotHelper().query(botInfo, query, (results, error) -> {
-            if (results == null || results.isEmpty()) {
-                callback.accept(null);
-                return;
-            }
-            var result = results.get(0);
-            if (result.send_message == null || TextUtils.isEmpty(result.send_message.message)) {
-                callback.accept(null);
-                return;
-            }
-            var lines = result.send_message.message.split("\n");
-            if (lines.length < 3) {
-                callback.accept(null);
-                return;
-            }
-            var peer = botInfo.parsePeer(lines);
-            if (peer == null || peer.id != id) {
-                callback.accept(null);
-                return;
-            }
-            if (peer.username != null) {
-                resolvePeer(peer.username, resolved -> {
-                    if (!resolved) {
-                        peer.username = null;
-                    }
-                    callback.accept(peer);
-                });
-            } else {
-                callback.accept(peer);
-            }
-        });
-    }
 
     private static String getDCLocation(int dc) {
         return switch (dc) {
@@ -267,7 +205,4 @@ public class UserHelper extends BaseController {
         }
     }
 
-    abstract public static class UserInfoBot implements BotInfo {
-        abstract public ParsedPeer parsePeer(String[] lines);
-    }
 }

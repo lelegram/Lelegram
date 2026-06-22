@@ -28,7 +28,6 @@ TMessagesProj_AppHuawei/afat/
 local.properties
 google-services.json
 sentry.properties
-/TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java
 *.jks
 *.keystore
 *.p12

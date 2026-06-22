@@ -255,7 +255,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.forward.ForwardContext;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.MonetHelper;
@@ -6045,11 +6044,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         BaseFragment fragment = getLastFragment();
                         if (fragment != null) {
                             if (error == null) {
-                                if (Extra.isDirectApp()) {
-                                    BulletinFactory.of(fragment).createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.YourVersionIsLatest)).show();
-                                } else {
-                                    showBulletin(factory -> factory.createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.NoUpdateAvailablePlay), LocaleController.getString(R.string.NoUpdateAvailablePlayDelay)));
-                                }
+                                BulletinFactory.of(fragment).createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.YourVersionIsLatest)).show();
                             } else {
                                 AlertsCreator.createSimpleAlert(this, LocaleController.getString(R.string.ErrorOccurred) + "\n" + error).show();
                             }

@@ -20,7 +20,6 @@ import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.SentryAndroid;
 import io.sentry.protocol.User;
-import com.fylnx.lelegram.Extra;
 
 public class AnalyticsHelper {
     private static SharedPreferences preferences;
@@ -33,8 +32,8 @@ public class AnalyticsHelper {
 
     public static void start(Application application) {
         preferences = application.getSharedPreferences("leleanalytics", Application.MODE_PRIVATE);
-        analyticsDisabled = !Extra.FORCE_ANALYTICS && preferences.getBoolean("analyticsDisabled", false);
-        sendBugReport = Extra.FORCE_ANALYTICS || preferences.getBoolean("sendBugReport", true);
+        analyticsDisabled = preferences.getBoolean("analyticsDisabled", false);
+        sendBugReport = preferences.getBoolean("sendBugReport", true);
         if (analyticsDisabled) {
             FileLog.d("Analytics: userId = disabled");
             return;
@@ -47,7 +46,6 @@ public class AnalyticsHelper {
         firebaseAnalytics.setAnalyticsCollectionEnabled(true);
         firebaseAnalytics.setUserId(userId);
         SentryAndroid.init(application, options -> {
-            options.setDsn(Extra.SENTRY_DSN);
             options.setEnvironment(BuildConfig.BUILD_TYPE);
             options.setPrintUncaughtStackTrace(true);
             options.setSendDefaultPii(true);
@@ -98,7 +96,7 @@ public class AnalyticsHelper {
     }
 
     public static boolean isSettingsAvailable() {
-        return !Extra.FORCE_ANALYTICS;
+        return true;
     }
 
     public static void setAnalyticsDisabled() {

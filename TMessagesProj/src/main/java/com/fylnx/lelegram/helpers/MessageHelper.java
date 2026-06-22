@@ -225,7 +225,7 @@ public class MessageHelper extends BaseController {
         return LocaleController.formatString(R.string.RecalledMultipleMessages, name, count);
     }
 
-    private static String getRecallSenderName(int accountNum, MessageObject messageObject) {
+    public static String getRecallSenderName(int accountNum, MessageObject messageObject) {
         long senderId = messageObject.getSenderId();
         if (senderId > 0) {
             TLRPC.User user = MessagesController.getInstance(accountNum).getUser(senderId);
@@ -360,11 +360,12 @@ public class MessageHelper extends BaseController {
                 && (messageObject.isVideo()
                 || messageObject.type == MessageObject.TYPE_PHOTO
                 || messageObject.isGif()
+                || messageObject.canPreviewDocument()
                 || messageObject.type == MessageObject.TYPE_TEXT && !messageObject.isWebpageDocument() && !messageObject.isMediaEmpty());
     }
 
-    private static boolean isRecallMediaAvailable(MessageObject messageObject) {
-        if (messageObject.isMediaEmpty()) {
+    public static boolean isRecallMediaAvailable(MessageObject messageObject) {
+        if (messageObject == null || messageObject.isMediaEmpty()) {
             return true;
         }
         messageObject.checkMediaExistance();

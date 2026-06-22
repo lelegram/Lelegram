@@ -80,7 +80,6 @@ import androidx.annotation.RawRes;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Consumer;
 
-import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.helpers.PasscodeHelper;
 
 import org.telegram.messenger.AccountInstance;
@@ -2003,10 +2002,6 @@ public class AlertsCreator {
     }
 
     public static void createBotLaunchAlert(BaseFragment fragment, TLRPC.User user, Runnable onConfirm, Runnable onDismiss) {
-        if (Extra.isTrustedBot(user.id)) {
-            onConfirm.run();
-            return;
-        }
         Context context = fragment.getContext();
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
@@ -2117,13 +2112,6 @@ public class AlertsCreator {
 
     public static void createBotLaunchAlert(BaseFragment fragment, AtomicBoolean allowWrite, TLRPC.User user, Runnable loadBotSheet) {
         if (fragment == null) {
-            return;
-        }
-        if (Extra.isTrustedBot(user.id)) {
-            if (allowWrite != null) {
-                allowWrite.set(true);
-            }
-            loadBotSheet.run();
             return;
         }
         Context context = fragment.getContext();

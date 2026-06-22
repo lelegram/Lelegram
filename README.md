@@ -17,7 +17,7 @@ MTProto protocol manuals: https://core.telegram.org/mtproto
 1. Fill out storeFile, storePassword, keyAlias, keyPassword in local.properties to access your release.keystore
 1. Go to https://console.firebase.google.com/, create two android apps with application IDs com.fylnx.lelegram and com.fylnx.lelegram.beta, turn on firebase messaging and download `google-services.json`, which should be copied into `TMessagesProj` folder.
 1. Open the project in the Studio (note that it should be opened, NOT imported).
-1. Fill out values in `TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java` – there’s a link for each of the variables showing where and which data to obtain.
+1. Provide Telegram API constants through Gradle properties or environment variables: `LELE_APP_ID` and `LELE_APP_HASH`. GitHub Actions reads the same names from repository secrets.
 1. You are ready to compile Lelegram.
 
 ## Localization

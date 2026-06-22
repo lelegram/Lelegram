@@ -25,9 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.fylnx.lelegram.Extra;
 import com.fylnx.lelegram.LeleConfig;
-import com.fylnx.lelegram.helpers.InlineBotHelper;
 
 public abstract class BaseRemoteHelper {
     protected static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleremoteconfig", Activity.MODE_PRIVATE);
@@ -47,10 +45,6 @@ public abstract class BaseRemoteHelper {
 
     protected FileLoader getFileLoader() {
         return FileLoader.getInstance(UserConfig.selectedAccount);
-    }
-
-    protected InlineBotHelper getInlineBotHelper() {
-        return InlineBotHelper.getInstance(UserConfig.selectedAccount);
     }
 
     abstract protected void onError(String text, Delegate delegate);
@@ -118,28 +112,7 @@ public abstract class BaseRemoteHelper {
         load(null);
     }
 
-    private boolean loading;
-
     public void load(Delegate delegate) {
-        var botInfo = Extra.getHelperBot();
-        if (botInfo == null) {
-            return;
-        }
-        if (!UserConfig.getInstance(UserConfig.selectedAccount).isClientActivated()) {
-            return;
-        }
-        if (loading) return;
-        loading = true;
-        getInlineBotHelper().query(botInfo,
-                getRequestMethod() + getRequestParams() + getRequestExtra(),
-                (results, error) -> {
-                    loading = false;
-                    if (error == null) {
-                        onLoadSuccess(results, delegate);
-                    } else {
-                        onError(error, delegate);
-                    }
-                });
     }
 
     public interface Delegate {

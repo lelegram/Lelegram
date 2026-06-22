@@ -3,15 +3,10 @@ package com.fylnx.lelegram.helpers;
 import com.google.gson.Gson;
 
 import org.telegram.messenger.AccountInstance;
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
-import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_bots;
 
 import java.util.HashMap;
-
-import com.fylnx.lelegram.Extra;
 
 public class CloudStorageHelper extends AccountInstance {
 
@@ -41,35 +36,9 @@ public class CloudStorageHelper extends AccountInstance {
     }
 
     private void invokeWebViewCustomMethod(String method, String data, boolean searchUser, Utilities.Callback2<String, String> callback) {
-        var botInfo = Extra.getHelperBot();
-        if (botInfo == null) {
-            return;
+        if (callback != null) {
+            callback.run(null, "EMPTY_BOT_INFO");
         }
-        TLRPC.User user = getMessagesController().getUser(botInfo.getId());
-        if (user == null) {
-            if (searchUser) {
-                getUserHelper().resolveUser(botInfo.getUsername(), botInfo.getId(), arg -> invokeWebViewCustomMethod(method, data, false, callback));
-            } else {
-                callback.run(null, "USER_NOT_FOUND");
-            }
-            return;
-        }
-        TL_bots.invokeWebViewCustomMethod req = new TL_bots.invokeWebViewCustomMethod();
-        req.bot = getMessagesController().getInputUser(user);
-        req.custom_method = method;
-        req.params = new TLRPC.TL_dataJSON();
-        req.params.data = data;
-        getConnectionsManager().sendRequest(req, (res, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (callback != null) {
-                if (error != null) {
-                    callback.run(null, error.text);
-                } else if (res instanceof TLRPC.TL_dataJSON) {
-                    callback.run(((TLRPC.TL_dataJSON) res).data, null);
-                } else {
-                    callback.run(null, null);
-                }
-            }
-        }));
     }
 
     public void setItem(String key, String value, Utilities.Callback2<String, String> callback) {
