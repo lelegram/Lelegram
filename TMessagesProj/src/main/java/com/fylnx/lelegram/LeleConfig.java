@@ -20,9 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import com.fylnx.lelegram.automation.AutomationManager;
-import com.fylnx.lelegram.automation.AutomationModels;
-import com.fylnx.lelegram.automation.AutomationRuleValidator;
 import com.fylnx.lelegram.helpers.AnalyticsHelper;
 import com.fylnx.lelegram.helpers.CloudSettingsHelper;
 import com.fylnx.lelegram.helpers.LensHelper;
@@ -153,7 +150,6 @@ public class LeleConfig {
     public static boolean hideBottomNavigationBar = false;
     public static boolean bottomFilterTabs = false;
     public static boolean strokeOnViews = true;
-    public static String automationRulesJson = AutomationModels.toJson(AutomationModels.emptyConfig());
 
     public static boolean shouldNOTTrustMe = false;
 
@@ -249,18 +245,6 @@ public class LeleConfig {
             reducedColors = preferences.getBoolean("reducedColors", false);
             ignoreContentRestriction = preferences.getBoolean("ignoreContentRestriction", false);
             externalTranslationProvider = preferences.getString("externalTranslationProvider", "");
-            automationRulesJson = preferences.getString("automationRulesJson", AutomationModels.toJson(AutomationModels.emptyConfig()));
-            try {
-                var parsedConfig = AutomationModels.fromJson(automationRulesJson);
-                var validation = AutomationRuleValidator.validateConfig(parsedConfig);
-                if (!validation.isValid()) {
-                    automationRulesJson = AutomationModels.toJson(AutomationModels.emptyConfig());
-                } else {
-                    automationRulesJson = AutomationModels.toJson(parsedConfig);
-                }
-            } catch (Exception ignore) {
-                automationRulesJson = AutomationModels.toJson(AutomationModels.emptyConfig());
-            }
             TranslatorApps.loadTranslatorAppsAsync();
             showTimeHint = preferences.getBoolean("showTimeHint", false);
             transcribeProvider = preferences.getInt("transcribeProvider", TRANSCRIBE_PREMIUM);
@@ -379,18 +363,6 @@ public class LeleConfig {
         editor.apply();
     }
 
-    public static void setAutomationRulesJson(String rulesJson) {
-        String normalized = rulesJson;
-        if (normalized == null || normalized.trim().isEmpty()) {
-            normalized = AutomationModels.toJson(AutomationModels.emptyConfig());
-        }
-        automationRulesJson = normalized;
-        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("leleconfig", Activity.MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("automationRulesJson", automationRulesJson);
-        editor.apply();
-        AutomationManager.getInstance().reloadRules();
-    }
 
     public static void setNewMarkdownParser(boolean newParser) {
         newMarkdownParser = newParser;

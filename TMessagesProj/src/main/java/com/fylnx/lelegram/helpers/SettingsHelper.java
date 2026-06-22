@@ -16,7 +16,6 @@ import java.util.function.Consumer;
 
 import com.fylnx.lelegram.settings.BaseLeleSettingsActivity;
 import com.fylnx.lelegram.settings.LeleAppearanceSettingsActivity;
-import com.fylnx.lelegram.settings.LeleAutomationSettingsActivity;
 import com.fylnx.lelegram.settings.LeleChatSettingsActivity;
 import com.fylnx.lelegram.settings.LeleEmojiSettingsActivity;
 import com.fylnx.lelegram.settings.LeleExperimentalSettingsActivity;
@@ -49,10 +48,6 @@ public class SettingsHelper {
                 case "chats":
                 case "c":
                     fragment = new LeleChatSettingsActivity();
-                    break;
-                case "automation":
-                case "auto":
-                    fragment = new LeleAutomationSettingsActivity();
                     break;
                 case "experimental":
                 case "e":

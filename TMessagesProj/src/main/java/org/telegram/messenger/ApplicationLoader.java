@@ -49,7 +49,6 @@ import java.io.File;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 
-import com.fylnx.lelegram.automation.AutomationManager;
 import com.fylnx.lelegram.FirebaseFix;
 import com.fylnx.lelegram.LeleConfig;
 import com.fylnx.lelegram.helpers.AnalyticsHelper;
@@ -283,7 +282,6 @@ public class ApplicationLoader extends Application {
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
-        AutomationManager.getInstance().start();
         BillingController.getInstance().startConnection();
     }
 

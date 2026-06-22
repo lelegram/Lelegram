@@ -50,7 +50,6 @@ public class LeleSettingsActivity extends BaseLeleSettingsActivity implements Fa
     private final int generalRow = rowId++;
     private final int appearanceRow = rowId++;
     private final int chatRow = rowId++;
-    private final int automationRow = rowId++;
     private final int passcodeRow = rowId++;
     private final int experimentRow = rowId++;
     private final int accessibilityRow = rowId++;
@@ -145,7 +144,6 @@ public class LeleSettingsActivity extends BaseLeleSettingsActivity implements Fa
         items.add(UItem.asButton(generalRow, R.drawable.msg_media, LocaleController.getString(R.string.General)).slug("general"));
         items.add(UItem.asButton(appearanceRow, R.drawable.msg_theme, LocaleController.getString(R.string.ChangeChannelNameColor2)).slug("appearance"));
         items.add(UItem.asButton(chatRow, R.drawable.msg_discussion, LocaleController.getString(R.string.Chat)).slug("chat"));
-        items.add(UItem.asButton(automationRow, R.drawable.msg_edit, LocaleController.getString(R.string.AutomationRules)).slug("automation"));
         if (!PasscodeHelper.isSettingsHidden()) {
             items.add(UItem.asButton(passcodeRow, R.drawable.msg_secret, LocaleController.getString(R.string.PasscodeLele)).slug("passcode"));
         }
@@ -172,8 +170,6 @@ public class LeleSettingsActivity extends BaseLeleSettingsActivity implements Fa
             presentFragment(new LeleGeneralSettingsActivity());
         } else if (id == appearanceRow) {
             presentFragment(new LeleAppearanceSettingsActivity());
-        } else if (id == automationRow) {
-            presentFragment(new LeleAutomationSettingsActivity());
         } else if (id == passcodeRow) {
             presentFragment(new LelePasscodeSettingsActivity());
         } else if (id == experimentRow) {
@@ -212,8 +208,6 @@ public class LeleSettingsActivity extends BaseLeleSettingsActivity implements Fa
             return new LeleAppearanceSettingsActivity();
         } else if (icon == R.drawable.msg_discussion) {
             return new LeleChatSettingsActivity();
-        } else if (icon == R.drawable.msg_edit) {
-            return new LeleAutomationSettingsActivity();
         } else if (icon == R.drawable.msg_fave) {
             return new LeleExperimentalSettingsActivity();
         }
@@ -226,7 +220,6 @@ public class LeleSettingsActivity extends BaseLeleSettingsActivity implements Fa
                 R.drawable.msg_media,
                 R.drawable.msg_theme,
                 R.drawable.msg_discussion,
-                R.drawable.msg_edit,
                 R.drawable.msg_fave,
         };
         for (var i = 0; i < icons.length; i++) {
