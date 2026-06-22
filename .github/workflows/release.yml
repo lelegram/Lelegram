@@ -65,22 +65,22 @@ jobs:
             -storepass android `
             -alias androiddebugkey | Out-Null
 
-      - name: Restore Extra.java
+      - name: Validate Telegram API secrets
         shell: pwsh
         env:
-          EXTRA_JAVA_BASE64: ${{ secrets.EXTRA_JAVA_BASE64 }}
+          LELE_APP_ID: ${{ secrets.LELE_APP_ID }}
+          LELE_APP_HASH: ${{ secrets.LELE_APP_HASH }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $extraJava = Join-Path $env:GITHUB_WORKSPACE 'TMessagesProj/src/main/java/com/fylnx/lelegram/Extra.java'
 
-          if ([string]::IsNullOrWhiteSpace($env:EXTRA_JAVA_BASE64)) {
-            throw 'Repository secret EXTRA_JAVA_BASE64 is required.'
+          if ([string]::IsNullOrWhiteSpace($env:LELE_APP_ID)) {
+            throw 'Repository secret LELE_APP_ID is required.'
           }
-
-          [IO.File]::WriteAllBytes($extraJava, [Convert]::FromBase64String($env:EXTRA_JAVA_BASE64))
-
-          if (-not (Select-String -LiteralPath $extraJava -Pattern 'class Extra' -Quiet)) {
-            throw 'Restored Extra.java does not contain class Extra.'
+          if ($env:LELE_APP_ID -notmatch '^\d+$') {
+            throw 'Repository secret LELE_APP_ID must be an integer.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:LELE_APP_HASH)) {
+            throw 'Repository secret LELE_APP_HASH is required.'
           }
 
       - name: Read release metadata
@@ -114,6 +114,9 @@ jobs:
 
       - name: Build release APKs
         shell: bash
+        env:
+          ORG_GRADLE_PROJECT_LELE_APP_ID: ${{ secrets.LELE_APP_ID }}
+          ORG_GRADLE_PROJECT_LELE_APP_HASH: ${{ secrets.LELE_APP_HASH }}
         run: ./gradlew --no-daemon :TMessagesProj_App:assembleRelease -PnativeDebugSymbolLevel=SYMBOL_TABLE
 
       - name: Create and push tag
@@ -161,7 +164,7 @@ jobs:
           Version: ${{ steps.metadata.outputs.version_name }}
           Version code: ${{ steps.metadata.outputs.version_code }}
           Signing: Repository secret DEBUG_KEYSTORE_BASE64
-          Private config: Repository secret EXTRA_JAVA_BASE64
+          Telegram API config: Repository secrets LELE_APP_ID and LELE_APP_HASH via Gradle project properties
           "@
 
           gh release view $tag *> $null
