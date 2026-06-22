@@ -46,6 +46,8 @@ public class AnalyticsHelper {
         firebaseAnalytics.setAnalyticsCollectionEnabled(true);
         firebaseAnalytics.setUserId(userId);
         SentryAndroid.init(application, options -> {
+            options.setDsn("");
+            options.setEnabled(false);
             options.setEnvironment(BuildConfig.BUILD_TYPE);
             options.setPrintUncaughtStackTrace(true);
             options.setSendDefaultPii(true);
