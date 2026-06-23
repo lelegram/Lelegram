@@ -53,7 +53,10 @@ openspec/
 .codex/
 .codex-tmp/
 .omc/
+.omp/
+.omp-debug/
 .serena/
 .codegraph/
 *.bat
+scripts/lsp/omp-*.cmd
 nul
