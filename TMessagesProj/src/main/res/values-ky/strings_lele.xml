@@ -3,7 +3,6 @@
     <string name="LeleSettings">Lelegram</string>
     <!-- Accessibility -->
     <string name="KeepDeletedMessages">Өчүрүлгөн билдирүүлөрдү сактоо</string>
-    <string name="KeepDeletedMessagesDesc">Кайтарылган билдирүүлөрдү жергиликтүү сактап, чаттарда кайтаруу эскертмелерин көрсөтөт жана эскертмени басканда чоо-жайын ачат.</string>
     <string name="DeletedFilter">Өчүрүлдү</string>
     <string name="DeletedMark">Өчүрүлдү</string>
     <string name="RecalledOneMessage">%1$s билдирүүнү кайтарып алды</string>

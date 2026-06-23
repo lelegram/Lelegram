@@ -12,7 +12,6 @@
     <string name="Connection">Sambungan</string>
     <string name="Chat">Obrolan</string>
     <string name="KeepDeletedMessages">Simpan pesan yang dihapus</string>
-    <string name="KeepDeletedMessagesDesc">Simpan pesan yang ditarik secara lokal, tampilkan petunjuk penarikan di obrolan, dan buka detail saat mengetuk petunjuk.</string>
     <string name="DeletedFilter">Dihapus</string>
     <string name="DeletedMark">Dihapus</string>
     <string name="RecalledOneMessage">%1$s menarik sebuah pesan</string>

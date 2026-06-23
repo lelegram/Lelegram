@@ -12,7 +12,6 @@
     <string name="Connection">Веза</string>
     <string name="Chat">Ћаскање</string>
     <string name="KeepDeletedMessages">Чувај обрисане поруке</string>
-    <string name="KeepDeletedMessagesDesc">Локално чува опозване поруке, приказује обавештења о опозиву у ћаскањима и отвара детаље када додирнете обавештење.</string>
     <string name="DeletedFilter">Обрисано</string>
     <string name="DeletedMark">Обрисано</string>
     <string name="RecalledOneMessage">%1$s је опозвао/ла поруку</string>

@@ -12,7 +12,6 @@
     <string name="Connection">Verbindung</string>
     <string name="Chat">Chat</string>
     <string name="KeepDeletedMessages">Gelöschte Nachrichten behalten</string>
-    <string name="KeepDeletedMessagesDesc">Zurückgerufene Nachrichten lokal behalten, Rückrufhinweise in Chats anzeigen und Details beim Tippen auf einen Hinweis öffnen.</string>
     <string name="DeletedFilter">Gelöscht</string>
     <string name="DeletedMark">Gelöscht</string>
     <string name="RecalledOneMessage">%1$s hat eine Nachricht zurückgerufen</string>

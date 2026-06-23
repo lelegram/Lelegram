@@ -12,7 +12,6 @@
     <string name="Connection">З\'єднання</string>
     <string name="Chat">Чат</string>
     <string name="KeepDeletedMessages">Зберігати видалені повідомлення</string>
-    <string name="KeepDeletedMessagesDesc">Зберігає відкликані повідомлення локально, показує сповіщення про відкликання в чатах і відкриває подробиці після натискання на сповіщення.</string>
     <string name="DeletedFilter">Видалено</string>
     <string name="DeletedMark">Видалено</string>
     <string name="RecalledOneMessage">%1$s відкликав(ла) повідомлення</string>

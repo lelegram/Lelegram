@@ -7,7 +7,6 @@
     <string name="Connection">සම්බන්ධතාවය</string>
     <string name="Chat">කතාබහ</string>
     <string name="KeepDeletedMessages">මකා දැමූ පණිවිඩ තබාගන්න</string>
-    <string name="KeepDeletedMessagesDesc">ආපසු කැඳවූ පණිවිඩ දේශීයව තබාගෙන, කතාබහවල ආපසු කැඳවීමේ ඉඟි පෙන්වා, ඉඟියක් තට්ටු කළ විට විස්තර විවෘත කරයි.</string>
     <string name="DeletedFilter">මකා දැමූ</string>
     <string name="DeletedMark">මකා දැමූ</string>
     <string name="RecalledOneMessage">%1$s පණිවිඩයක් ආපසු කැඳවීය</string>

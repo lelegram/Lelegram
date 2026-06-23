@@ -12,7 +12,6 @@
     <string name="Connection">اتصال</string>
     <string name="Chat">مُحادثة</string>
     <string name="KeepDeletedMessages">الاحتفاظ بالرسائل المحذوفة</string>
-    <string name="KeepDeletedMessagesDesc">احفظ الرسائل المسترجعة محليًا، واعرض تنبيهات الاسترجاع في المحادثات، وافتح التفاصيل عند الضغط على التنبيه.</string>
     <string name="DeletedFilter">محذوفة</string>
     <string name="DeletedMark">محذوفة</string>
     <string name="RecalledOneMessage">%1$s سحب رسالة</string>

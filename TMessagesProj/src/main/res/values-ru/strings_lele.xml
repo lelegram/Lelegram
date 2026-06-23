@@ -12,7 +12,6 @@
     <string name="Connection">Соединение</string>
     <string name="Chat">Чат</string>
     <string name="KeepDeletedMessages">Сохранять удалённые сообщения</string>
-    <string name="KeepDeletedMessagesDesc">Сохраняет отозванные сообщения локально, показывает уведомления об отзыве в чатах и открывает детали при нажатии на уведомление.</string>
     <string name="DeletedFilter">Удалено</string>
     <string name="DeletedMark">Удалено</string>
     <string name="RecalledOneMessage">%1$s отозвал(а) сообщение</string>

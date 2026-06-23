@@ -2,7 +2,6 @@
 <resources>
     <!-- Accessibility -->
     <string name="KeepDeletedMessages">שמירת הודעות שנמחקו</string>
-    <string name="KeepDeletedMessagesDesc">שמור הודעות שנמשכו בחזרה באופן מקומי, הצג התראות משיכה בצאטים ופתח פרטים בעת הקשה על התראה.</string>
     <string name="DeletedFilter">נמחק</string>
     <string name="DeletedMark">נמחק</string>
     <string name="RecalledOneMessage">%1$s משך הודעה</string>

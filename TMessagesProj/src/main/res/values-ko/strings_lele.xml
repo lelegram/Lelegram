@@ -11,7 +11,6 @@
     <string name="Connection">연결</string>
     <string name="Chat">채팅</string>
     <string name="KeepDeletedMessages">삭제된 메시지 보관</string>
-    <string name="KeepDeletedMessagesDesc">회수된 메시지를 로컬에 보관하고 채팅에 회수 안내를 표시하며, 안내를 탭하면 자세한 내용을 엽니다.</string>
     <string name="DeletedFilter">삭제됨</string>
     <string name="DeletedMark">삭제됨</string>
     <string name="RecalledOneMessage">%1$s님이 메시지를 회수했습니다</string>

@@ -2,7 +2,6 @@
 <resources>
     <!-- Accessibility -->
     <string name="KeepDeletedMessages">Konservi forigitajn mesaĝojn</string>
-    <string name="KeepDeletedMessagesDesc">Konservi revokitajn mesaĝojn loke, montri revokajn indikojn en babilejoj kaj malfermi detalojn kiam vi tuŝas indikon.</string>
     <string name="DeletedFilter">Forigita</string>
     <string name="DeletedMark">Forigita</string>
     <string name="RecalledOneMessage">%1$s revokis mesaĝon</string>

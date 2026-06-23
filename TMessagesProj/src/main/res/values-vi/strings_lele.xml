@@ -12,7 +12,6 @@
     <string name="Connection">Kết nối</string>
     <string name="Chat">Trò chuyện</string>
     <string name="KeepDeletedMessages">Giữ tin nhắn đã xóa</string>
-    <string name="KeepDeletedMessagesDesc">Lưu cục bộ các tin nhắn đã thu hồi, hiển thị thông báo thu hồi trong cuộc trò chuyện và mở chi tiết khi nhấn vào thông báo.</string>
     <string name="DeletedFilter">Đã xóa</string>
     <string name="DeletedMark">Đã xóa</string>
     <string name="RecalledOneMessage">%1$s đã thu hồi một tin nhắn</string>

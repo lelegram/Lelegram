@@ -12,7 +12,6 @@
     <string name="Connection">Kapcsolat</string>
     <string name="Chat">Csevegés</string>
     <string name="KeepDeletedMessages">Törölt üzenetek megtartása</string>
-    <string name="KeepDeletedMessagesDesc">Helyben megőrzi a visszavont üzeneteket, visszavonási jelzéseket mutat a csevegésekben, és a jelzésre koppintva megnyitja a részleteket.</string>
     <string name="DeletedFilter">Törölve</string>
     <string name="DeletedMark">Törölve</string>
     <string name="RecalledOneMessage">%1$s visszavont egy üzenetet</string>

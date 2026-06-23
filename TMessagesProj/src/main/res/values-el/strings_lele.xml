@@ -12,7 +12,6 @@
     <string name="Connection">Σύνδεση</string>
     <string name="Chat">Συνομιλία</string>
     <string name="KeepDeletedMessages">Διατήρηση διαγραμμένων μηνυμάτων</string>
-    <string name="KeepDeletedMessagesDesc">Διατηρεί τοπικά τα ανακλημένα μηνύματα, εμφανίζει ειδοποιήσεις ανάκλησης στις συνομιλίες και ανοίγει λεπτομέρειες όταν πατάτε μια ειδοποίηση.</string>
     <string name="DeletedFilter">Διαγράφηκε</string>
     <string name="DeletedMark">Διαγράφηκε</string>
     <string name="RecalledOneMessage">Ο/Η %1$s ανακάλεσε ένα μήνυμα</string>

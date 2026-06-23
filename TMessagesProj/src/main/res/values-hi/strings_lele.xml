@@ -9,7 +9,6 @@
     <string name="Connection">कनेक्शन</string>
     <string name="Chat">चैट</string>
     <string name="KeepDeletedMessages">हटाए गए संदेश रखें</string>
-    <string name="KeepDeletedMessagesDesc">वापस लिए गए संदेशों को स्थानीय रूप से सुरक्षित रखें, चैट में वापस लेने के संकेत दिखाएं और संकेत पर टैप करने पर विवरण खोलें।</string>
     <string name="DeletedFilter">हटाया गया</string>
     <string name="DeletedMark">हटाया गया</string>
     <string name="RecalledOneMessage">%1$s ने एक संदेश वापस लिया</string>

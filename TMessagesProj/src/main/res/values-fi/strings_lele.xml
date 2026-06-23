@@ -8,7 +8,6 @@
     <string name="Connection">Yhteys</string>
     <string name="Chat">Chatti</string>
     <string name="KeepDeletedMessages">Säilytä poistetut viestit</string>
-    <string name="KeepDeletedMessagesDesc">Säilytä perutut viestit paikallisesti, näytä perumisilmoitukset chateissa ja avaa tiedot, kun ilmoitusta napautetaan.</string>
     <string name="DeletedFilter">Poistettu</string>
     <string name="DeletedMark">Poistettu</string>
     <string name="RecalledOneMessage">%1$s perui viestin</string>

@@ -12,7 +12,6 @@
     <string name="Connection">Conexão</string>
     <string name="Chat">Conversa</string>
     <string name="KeepDeletedMessages">Manter mensagens apagadas</string>
-    <string name="KeepDeletedMessagesDesc">Preserva localmente as mensagens revogadas, mostra avisos de revogação nas conversas e abre os detalhes ao tocar num aviso.</string>
     <string name="DeletedFilter">Apagado</string>
     <string name="DeletedMark">Apagado</string>
     <string name="RecalledOneMessage">%1$s revogou uma mensagem</string>

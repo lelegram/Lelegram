@@ -12,7 +12,6 @@
     <string name="Connection">Connessione</string>
     <string name="Chat">Chat</string>
     <string name="KeepDeletedMessages">Conserva messaggi eliminati</string>
-    <string name="KeepDeletedMessagesDesc">Conserva localmente i messaggi ritirati, mostra avvisi di ritiro nelle chat e apre i dettagli quando tocchi un avviso.</string>
     <string name="DeletedFilter">Eliminato</string>
     <string name="DeletedMark">Eliminato</string>
     <string name="RecalledOneMessage">%1$s ha ritirato un messaggio</string>

@@ -54,7 +54,6 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
 
     private final int ignoreBlockedRow = rowId++;
     private final int keepDeletedMessagesRow = rowId++;
-    private final int forwardDeletedMessagesRow = rowId++;
     private final int allowProtectedContentActionsRow = rowId++;
     private final int quickForwardRow = rowId++;
     private final int hideKeyboardOnChatScrollRow = rowId++;
@@ -157,9 +156,8 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.Chat)));
         items.add(UItem.asCheck(ignoreBlockedRow, LocaleController.getString(R.string.IgnoreBlocked), LocaleController.getString(R.string.IgnoreBlockedAbout)).slug("ignoreBlocked").setChecked(LeleConfig.ignoreBlocked));
-        items.add(UItem.asCheck(keepDeletedMessagesRow, LocaleController.getString(R.string.KeepDeletedMessages), LocaleController.getString(R.string.KeepDeletedMessagesDesc)).slug("keepDeletedMessages").setChecked(LeleConfig.keepDeletedMessages));
-        items.add(UItem.asCheck(forwardDeletedMessagesRow, LocaleController.getString(R.string.ForwardDeletedMessages), LocaleController.getString(R.string.ForwardDeletedMessagesDesc)).slug("forwardDeletedMessages").setChecked(LeleConfig.forwardDeletedMessages));
-        items.add(UItem.asCheck(allowProtectedContentActionsRow, LocaleController.getString(R.string.AllowProtectedContentActions), LocaleController.getString(R.string.AllowProtectedContentActionsDesc)).slug("allowProtectedContentActions").setChecked(LeleConfig.allowProtectedContentActions));
+        items.add(UItem.asCheck(keepDeletedMessagesRow, LocaleController.getString(R.string.KeepDeletedMessages)).slug("keepDeletedMessages").setChecked(LeleConfig.keepDeletedMessages));
+        items.add(UItem.asCheck(allowProtectedContentActionsRow, LocaleController.getString(R.string.AllowProtectedContentActions)).slug("allowProtectedContentActions").setChecked(LeleConfig.allowProtectedContentActions));
         items.add(UItem.asCheck(quickForwardRow, LocaleController.getString(R.string.QuickForward)).slug("quickForward").setChecked(LeleConfig.quickForward));
         items.add(UItem.asCheck(hideKeyboardOnChatScrollRow, LocaleController.getString(R.string.HideKeyboardOnChatScroll)).slug("hideKeyboardOnChatScroll").setChecked(LeleConfig.hideKeyboardOnChatScroll));
         items.add(UItem.asCheck(tryToOpenAllLinksInIVRow, LocaleController.getString(R.string.OpenAllLinksInInstantView)).slug("tryToOpenAllLinksInIV").setChecked(LeleConfig.tryToOpenAllLinksInIV));
@@ -235,11 +233,6 @@ public class LeleChatSettingsActivity extends BaseLeleSettingsActivity implement
             LeleConfig.toggleKeepDeletedMessages();
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(LeleConfig.keepDeletedMessages);
-            }
-        } else if (id == forwardDeletedMessagesRow) {
-            LeleConfig.toggleForwardDeletedMessages();
-            if (view instanceof TextCheckCell) {
-                ((TextCheckCell) view).setChecked(LeleConfig.forwardDeletedMessages);
             }
         } else if (id == allowProtectedContentActionsRow) {
             LeleConfig.toggleAllowProtectedContentActions();

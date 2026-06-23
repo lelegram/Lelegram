@@ -9,7 +9,6 @@
     <string name="Connection">Savienojums</string>
     <string name="Chat">Čats</string>
     <string name="KeepDeletedMessages">Saglabāt dzēstos ziņojumus</string>
-    <string name="KeepDeletedMessagesDesc">Lokāli saglabā atsauktos ziņojumus, rāda atsaukšanas paziņojumus tērzētavās un atver detaļas, pieskaroties paziņojumam.</string>
     <string name="DeletedFilter">Dzēsts</string>
     <string name="DeletedMark">Dzēsts</string>
     <string name="RecalledOneMessage">%1$s atsauca ziņojumu</string>

@@ -12,7 +12,6 @@
     <string name="Connection">การเชื่อมต่อ</string>
     <string name="Chat">แชท</string>
     <string name="KeepDeletedMessages">เก็บข้อความที่ถูกลบ</string>
-    <string name="KeepDeletedMessagesDesc">เก็บข้อความที่ถูกเรียกคืนไว้ในเครื่อง แสดงการแจ้งเตือนการเรียกคืนในแชท และเปิดรายละเอียดเมื่อแตะการแจ้งเตือน</string>
     <string name="DeletedFilter">ถูกลบแล้ว</string>
     <string name="DeletedMark">ถูกลบแล้ว</string>
     <string name="RecalledOneMessage">%1$s เรียกคืนข้อความหนึ่งข้อความ</string>

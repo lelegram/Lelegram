@@ -12,7 +12,6 @@
     <string name="Connection">Conexiune</string>
     <string name="Chat">Conversație</string>
     <string name="KeepDeletedMessages">Păstrează mesajele șterse</string>
-    <string name="KeepDeletedMessagesDesc">Păstrează local mesajele retrase, afișează notificări de retragere în conversații și deschide detaliile când atingi o notificare.</string>
     <string name="DeletedFilter">Șters</string>
     <string name="DeletedMark">Șters</string>
     <string name="RecalledOneMessage">%1$s a retras un mesaj</string>

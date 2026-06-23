@@ -12,7 +12,6 @@
     <string name="Connection">ارتباط</string>
     <string name="Chat">گفتگو</string>
     <string name="KeepDeletedMessages">نگه‌داشتن پیام‌های حذف‌شده</string>
-    <string name="KeepDeletedMessagesDesc">پیام‌های پس‌گرفته‌شده را به‌صورت محلی نگه می‌دارد، اعلان پس‌گرفتن را در گفتگوها نشان می‌دهد و با لمس اعلان، جزئیات را باز می‌کند.</string>
     <string name="DeletedFilter">حذف‌شده</string>
     <string name="DeletedMark">حذف‌شده</string>
     <string name="RecalledOneMessage">%1$s پیامی را پس گرفت</string>

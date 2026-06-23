@@ -15,15 +15,11 @@
     <string name="Connection">Connection</string>
     <string name="Chat">Chat</string>
     <string name="KeepDeletedMessages">Keep deleted messages</string>
-    <string name="KeepDeletedMessagesDesc">Preserve recalled messages locally, show recall prompts in chats, and open details when tapping a prompt.</string>
-    <string name="ForwardDeletedMessages">Forward deleted messages</string>
-    <string name="ForwardDeletedMessagesDesc">When forwarding locally preserved deleted messages, send a copied message instead of using server-side forward.</string>
     <string name="AllowProtectedContentActions">Allow protected content actions</string>
-    <string name="AllowProtectedContentActionsDesc">When a chat or message protects content, still allow local forwarding, copying, saving, sharing, and screenshot-related actions. Other blockers such as paid media, TTL media, and unsupported actions still apply.</string>
     <string name="DeletedFilter">Deleted</string>
     <string name="DeletedMark">Deleted</string>
-    <string name="RecalledOneMessage">%1$s recalled a message</string>
-    <string name="RecalledMultipleMessages">%1$s recalled %2$d messages</string>
+    <string name="RecalledOneMessage">A message from %1$s was recalled</string>
+    <string name="RecalledMultipleMessages">%2$d messages from %1$s were recalled</string>
     <string name="RecalledMessagesTitle">Recalled messages</string>
     <string name="RecalledMediaUnavailable">media unavailable</string>
     <string name="RecalledUnsupportedMessage">Unsupported recalled message</string>

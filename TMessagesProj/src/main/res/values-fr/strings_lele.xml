@@ -11,7 +11,6 @@
     <string name="Connection">Connexion</string>
     <string name="Chat">Échange</string>
     <string name="KeepDeletedMessages">Conserver les messages supprimés</string>
-    <string name="KeepDeletedMessagesDesc">Conserve localement les messages retirés, affiche les avis de retrait dans les échanges et ouvre les détails lorsque vous touchez un avis.</string>
     <string name="DeletedFilter">Supprimé</string>
     <string name="DeletedMark">Supprimé</string>
     <string name="RecalledOneMessage">%1$s a retiré un message</string>

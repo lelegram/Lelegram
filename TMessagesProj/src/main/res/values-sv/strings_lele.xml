@@ -9,7 +9,6 @@
     <string name="Connection">Anslutning</string>
     <string name="Chat">Chatt</string>
     <string name="KeepDeletedMessages">Behåll raderade meddelanden</string>
-    <string name="KeepDeletedMessagesDesc">Bevara återkallade meddelanden lokalt, visa återkallelsemeddelanden i chattar och öppna detaljer när du trycker på ett meddelande.</string>
     <string name="DeletedFilter">Raderad</string>
     <string name="DeletedMark">Raderad</string>
     <string name="RecalledOneMessage">%1$s återkallade ett meddelande</string>

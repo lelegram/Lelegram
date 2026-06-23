@@ -6,7 +6,6 @@
     <string name="Connection">Forbindelse</string>
     <string name="Chat">Chate</string>
     <string name="KeepDeletedMessages">Behold slettede meldinger</string>
-    <string name="KeepDeletedMessagesDesc">Lagre tilbaketrukne meldinger lokalt, vis varsel om tilbaketrekking i chatter, og åpne detaljer når du trykker på et varsel.</string>
     <string name="DeletedFilter">Slettet</string>
     <string name="DeletedMark">Slettet</string>
     <string name="RecalledOneMessage">%1$s trakk tilbake en melding</string>

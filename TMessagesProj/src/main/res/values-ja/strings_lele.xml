@@ -12,7 +12,6 @@
     <string name="Connection">接続</string>
     <string name="Chat">チャット</string>
     <string name="KeepDeletedMessages">削除されたメッセージを保持</string>
-    <string name="KeepDeletedMessagesDesc">取り消されたメッセージをローカルに保存し、チャットに取り消し通知を表示し、通知をタップすると詳細を開きます。</string>
     <string name="DeletedFilter">削除済み</string>
     <string name="DeletedMark">削除済み</string>
     <string name="RecalledOneMessage">%1$sがメッセージを取り消しました</string>

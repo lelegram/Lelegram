@@ -11,7 +11,6 @@
     <string name="Connection">Підключення</string>
     <string name="Chat">Чат</string>
     <string name="KeepDeletedMessages">Uchovávat smazané zprávy</string>
-    <string name="KeepDeletedMessagesDesc">Uchovávat odvolané zprávy místně, zobrazovat upozornění na odvolání v chatech a po klepnutí otevřít podrobnosti.</string>
     <string name="DeletedFilter">Smazáno</string>
     <string name="DeletedMark">Smazáno</string>
     <string name="RecalledOneMessage">%1$s stáhl(a) zprávu</string>

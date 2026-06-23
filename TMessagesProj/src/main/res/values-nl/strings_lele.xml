@@ -11,7 +11,6 @@
     <string name="Connection">Verbinding</string>
     <string name="Chat">Chat</string>
     <string name="KeepDeletedMessages">Verwijderde berichten bewaren</string>
-    <string name="KeepDeletedMessagesDesc">Bewaar ingetrokken berichten lokaal, toon intrekkingsmeldingen in chats en open details wanneer je op een melding tikt.</string>
     <string name="DeletedFilter">Verwijderd</string>
     <string name="DeletedMark">Verwijderd</string>
     <string name="RecalledOneMessage">%1$s heeft een bericht ingetrokken</string>

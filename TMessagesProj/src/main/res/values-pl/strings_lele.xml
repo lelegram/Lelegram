@@ -12,7 +12,6 @@
     <string name="Connection">Połączenie</string>
     <string name="Chat">Czat</string>
     <string name="KeepDeletedMessages">Zachowuj usunięte wiadomości</string>
-    <string name="KeepDeletedMessagesDesc">Zachowuje lokalnie wycofane wiadomości, pokazuje powiadomienia o wycofaniu w czatach i otwiera szczegóły po dotknięciu powiadomienia.</string>
     <string name="DeletedFilter">Usunięto</string>
     <string name="DeletedMark">Usunięto</string>
     <string name="RecalledOneMessage">%1$s wycofał(a) wiadomość</string>
