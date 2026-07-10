@@ -296,7 +296,7 @@ public class MessageHelper extends BaseController {
             return LocaleController.getString(R.string.RecalledUnsupportedMessage);
         }
         SpannableStringBuilder summary = new SpannableStringBuilder(mediaType);
-        if (!isRecallMediaOpenable(messageObject) && !isRecallMediaAvailable(messageObject)) {
+        if (isRecallFileBackedMedia(messageObject) && !isRecallMediaAvailable(messageObject)) {
             summary.append(" · ");
             summary.append(LocaleController.getString(R.string.RecalledMediaUnavailable));
         }
@@ -362,6 +362,22 @@ public class MessageHelper extends BaseController {
                 || messageObject.isGif()
                 || messageObject.canPreviewDocument()
                 || messageObject.type == MessageObject.TYPE_TEXT && !messageObject.isWebpageDocument() && !messageObject.isMediaEmpty());
+    }
+
+    public static boolean isRecallFileBackedMedia(MessageObject messageObject) {
+        if (messageObject == null || messageObject.messageOwner == null || messageObject.messageOwner.rich_message != null) {
+            return false;
+        }
+        TLRPC.MessageMedia media = MessageObject.getMedia(messageObject.messageOwner);
+        if (media == null
+                || media instanceof TLRPC.TL_messageMediaEmpty
+                || media instanceof TLRPC.TL_messageMediaWebPage
+                || messageObject.type == MessageObject.TYPE_GEO
+                || messageObject.type == MessageObject.TYPE_CONTACT
+                || messageObject.isPoll()) {
+            return false;
+        }
+        return media instanceof TLRPC.TL_messageMediaPhoto || media.document != null;
     }
 
     public static boolean isRecallMediaAvailable(MessageObject messageObject) {
