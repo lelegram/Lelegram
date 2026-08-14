@@ -17244,6 +17244,15 @@ public class ChatActivity extends BaseFragment implements
             }
 
             int index = chatAdapter.getMessages().indexOf(object);
+            if (index == -1 && !chatAdapter.isFiltered) {
+                MessageObject prompt = findLeleRecallPromptForMessageId(id);
+                if (prompt != null) {
+                    index = chatAdapter.getMessages().indexOf(prompt);
+                    if (index != -1) {
+                        object = prompt;
+                    }
+                }
+            }
             if (index != -1) {
                 if (scrollFromIndex > 0) {
                     scrollDirection = scrollFromIndex > index ? RecyclerAnimationScrollHelper.SCROLL_DIRECTION_DOWN : RecyclerAnimationScrollHelper.SCROLL_DIRECTION_UP;
@@ -22115,6 +22124,9 @@ public class ChatActivity extends BaseFragment implements
                 chatScrollHelper.scrollToPosition(chatScrollHelperCallback.position = 0, chatScrollHelperCallback.offset = 0, chatScrollHelperCallback.bottom = true, true);
             } else {
                 MessageObject object = messagesDict[loadIndex].get(postponedScrollMessageId);
+                if (object == null || messages.indexOf(object) < 0) {
+                    object = findLeleRecallPromptForMessageId(postponedScrollMessageId);
+                }
                 if (object != null) {
                     MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(object.getGroupId());
                     if (object.getGroupId() != 0 && groupedMessages != null) {
@@ -25443,6 +25455,21 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
+    private MessageObject findLeleRecallPromptForMessageId(int messageId) {
+        for (int i = 0; i < messages.size(); i++) {
+            MessageObject messageObject = messages.get(i);
+            if (messageObject != null && messageObject.isLeleRecallPrompt() && messageObject.leleRecalledMessages != null) {
+                for (int j = 0; j < messageObject.leleRecalledMessages.size(); j++) {
+                    MessageObject recalled = messageObject.leleRecalledMessages.get(j);
+                    if (recalled != null && recalled.getId() == messageId) {
+                        return messageObject;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     private void replaceMessageInsideLeleRecallPrompt(MessageObject prompt, MessageObject messageObject) {
         if (prompt == null || prompt.leleRecalledMessages == null || messageObject == null) {
             return;
@@ -25503,17 +25530,20 @@ public class ChatActivity extends BaseFragment implements
             rebuiltMessages.add(createOrReuseLeleRecallPrompt(existingPrompts, run));
         }
 
-        if (rebuiltMessages.equals(messages)) {
-            return false;
+        boolean changed = !rebuiltMessages.equals(messages);
+        if (changed) {
+            messages.clear();
+            messages.addAll(rebuiltMessages);
+            rebuildLeleRecallDayArrays();
         }
-        messages.clear();
-        messages.addAll(rebuiltMessages);
-        rebuildLeleRecallDayArrays();
         for (int i = 0; i < messages.size(); i++) {
             MessageObject messageObject = messages.get(i);
             if (messageObject != null && messageObject.isLeleRecallPrompt()) {
                 syncLeleRecallPromptIndexes(messageObject);
             }
+        }
+        if (!changed) {
+            return false;
         }
         if (notifyAdapter && chatAdapter != null && !chatAdapter.isFiltered) {
             chatAdapter.notifyDataSetChanged(true);
