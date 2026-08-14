@@ -60,3 +60,4 @@ openspec/
 *.bat
 scripts/lsp/omp-*.cmd
 nul
+TMessagesProj/jni/ffmpeg/build_android
