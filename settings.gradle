@@ -21,19 +21,12 @@ pluginManagement {
             url 'https://maven.aliyun.com/repository/public'
         }
     }
-    resolutionStrategy {
-        eachPlugin {
-            if (requested.id.id == "com.android.application" || requested.id.id == "com.android.library") {
-                useModule("com.android.tools.build:gradle:${requested.version}")
-            }
-        }
-    }
 }
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
@@ -53,3 +46,5 @@ include ':TMessagesProj_App'
 //include ':TMessagesProj_AppHockeyApp'
 //include ':TMessagesProj_AppStandalone'
 //include ':TMessagesProj_AppTests'
+include ':jlatexmath'
+project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')

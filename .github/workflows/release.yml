@@ -24,13 +24,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/release' }}
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -43,6 +48,12 @@ jobs:
             "build-tools;36.1.0" `
             "ndk;27.3.13750724" `
             "cmake;4.0.2"
+
+      - name: Set up native compiler cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: release-apk-ndk-27.3.13750724-cmake-4.0.2
+          max-size: 2G
 
       - name: Restore Windows debug keystore
         shell: pwsh
@@ -117,7 +128,7 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_LELE_APP_ID: ${{ secrets.LELE_APP_ID }}
           ORG_GRADLE_PROJECT_LELE_APP_HASH: ${{ secrets.LELE_APP_HASH }}
-        run: ./gradlew --no-daemon :TMessagesProj_App:assembleRelease -PnativeDebugSymbolLevel=SYMBOL_TABLE
+        run: ./gradlew --no-daemon --build-cache :TMessagesProj_App:assembleRelease -PnativeDebugSymbolLevel=SYMBOL_TABLE
 
       - name: Create and push tag
         shell: pwsh
