@@ -2,6 +2,7 @@ import com.android.build.api.variant.FilterConfiguration
 
 plugins {
     id 'com.android.application'
+    id 'org.telegram.build-app-plugin'
     id 'com.google.gms.google-services'
     id 'io.sentry.android.gradle'
 }
@@ -82,6 +83,14 @@ android {
         resources {
             excludes += '**'
         }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    androidResources {
+        noCompress += "pack"
+        localeFilters += ["zz"]
     }
 
     signingConfigs {
@@ -121,8 +130,6 @@ android {
 
     defaultConfig {
         versionName APP_VERSION_NAME
-        ndkVersion "27.2.12479018"
-
         multiDexEnabled true
     }
 

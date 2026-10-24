@@ -25,6 +25,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 
 import com.google.zxing.EncodeHintType;
@@ -53,6 +54,11 @@ public final class TelegramQRCodeWriter {
   private int sideQuadSize;
 
   private int imageSize;
+  private Drawable centerDrawable;
+
+  public void setCenterDrawable(Drawable drawable) {
+    centerDrawable = drawable;
+  }
 
   public Bitmap encode(String contents, int width, int height, Map<EncodeHintType, ?> hints, Bitmap bitmap) throws WriterException {
     return encode(contents, width, height, hints, bitmap, 1.0f, 0xffffffff, 0xff000000);
@@ -123,11 +129,11 @@ public final class TelegramQRCodeWriter {
     rect.setCornerRadii(radii);
 
     imageBloks = !drawLogo ? 0 : Math.round((size - 32) / 4.65f / multiple);
-    if (imageBloks % 2 != inputWidth % 2) {
+    if (drawLogo && imageBloks % 2 != inputWidth % 2) {
       imageBloks++;
     }
     imageBlockX = (inputWidth - imageBloks) / 2;
-    imageSize = imageBloks * multiple - 24;
+    imageSize = drawLogo ? imageBloks * multiple - 24 : 0;
     int imageX = (size - imageSize) / 2;
     if (includeSideQuads) {
       blackPaint.setColor(color);
@@ -189,9 +195,14 @@ public final class TelegramQRCodeWriter {
     }
 
     if (drawLogo) {
-      Bitmap icon = SvgHelper.getBitmap(readRes(R.raw.qr_logo), imageSize, imageSize, false);
-      canvas.drawBitmap(icon, imageX, imageX, null);
-      icon.recycle();
+      if (centerDrawable != null) {
+        centerDrawable.setBounds(imageX, imageX, imageX + imageSize, imageX + imageSize);
+        centerDrawable.draw(canvas);
+      } else {
+        Bitmap icon = SvgHelper.getBitmap(readRes(R.raw.qr_logo), imageSize, imageSize, false);
+        canvas.drawBitmap(icon, imageX, imageX, null);
+        icon.recycle();
+      }
     }
 
     canvas.setBitmap(null);
