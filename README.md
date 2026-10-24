@@ -34,3 +34,5 @@ Lelegram is forked from Telegram, thus most locales follows the translations of 
 As for the Lelegram specialized strings, we use Crowdin to translate Lelegram. Join project at https://crowdin.com/project/lelegram. Help us bring Lelegram to the world!
 
 App builds package official, Lelegram, and accessibility translations from `values*/strings*.xml` into binary localization assets.
+
+Application labels and their alias targets must remain Android string resources. `TelegramStringsTask.PLATFORM_APP_NAME_RESOURCES` keeps them available to system Settings and launchers.

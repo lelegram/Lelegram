@@ -25,14 +25,12 @@ import java.nio.charset.StandardCharsets
 abstract class TelegramStringsTask : DefaultTask() {
 
     companion object {
-        private val GENERATED_EXCLUSIONS = setOf(
+        // Android resolves application labels without access to our localization assets.
+        private val PLATFORM_APP_NAME_RESOURCES = setOf(
             "AppName",
-            "AppNameBeta"
-        )
-
-        private val STABLE_IDS_EXCLUSIONS = setOf(
-            "AppName",
-            "AppNameBeta"
+            "AppNameBeta",
+            "AppNameLele",
+            "Lelegram"
         )
 
         private const val STRING_RESOURCE_ID_BASE = 0x7F0FFFFE
@@ -221,7 +219,7 @@ abstract class TelegramStringsTask : DefaultTask() {
     ) {
         val stableStrings = strings
             .asSequence()
-            .filterNot { STABLE_IDS_EXCLUSIONS.contains(it) }
+            .filterNot { PLATFORM_APP_NAME_RESOURCES.contains(it) }
             .sorted()
             .toList()
 
@@ -255,7 +253,7 @@ abstract class TelegramStringsTask : DefaultTask() {
 
         val discard = strings
             .asSequence()
-            .filterNot { GENERATED_EXCLUSIONS.contains(it) }
+            .filterNot { PLATFORM_APP_NAME_RESOURCES.contains(it) }
             .joinToString(", ") { "@string/$it" }
 
         rawDir.resolve("strings_discard.xml")
